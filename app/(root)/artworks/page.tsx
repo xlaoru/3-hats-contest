@@ -1,5 +1,6 @@
 import ArtworkCard from "@/components/artwork-card";
 import { getPublicArtworks } from "@/lib/actions/artwork.action";
+import Link from "next/link";
 
 const ArtworksPage = async () => {
     const { success, data: artworks } = await getPublicArtworks();
@@ -9,9 +10,17 @@ const ArtworksPage = async () => {
             <div className="mx-auto max-w-6xl">
                 <div className="flex items-end justify-between mb-6">
                     <h1 className="text-2xl font-bold text-gray-900">Gallery</h1>
-                    {success && artworks && (
-                        <span className="text-sm text-gray-500">{artworks.length} entries</span>
-                    )}
+                    <div className="flex items-center gap-4">
+                        {success && artworks && (
+                            <span className="text-sm text-gray-500">{artworks.length} entries</span>
+                        )}
+                        <Link
+                            href="/artworks/send"
+                            className="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-colors"
+                        >
+                            Submit your artwork
+                        </Link>
+                    </div>
                 </div>
 
                 {!success && (

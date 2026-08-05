@@ -32,3 +32,17 @@ interface RequestPublicVoteParams {
 interface ConfirmPublicVoteParams {
   token: string;
 }
+
+interface SubmitArtworkParams {
+  name: string;
+  email: string;
+  state: string;
+  title: string;
+  medium: string;
+  artworkSize: string;
+  venue: string;
+  dateCreated: Date;
+  artworkImage: string;
+  proveImage: string;
+  agreedToRules: boolean;
+}

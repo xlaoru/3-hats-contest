@@ -11,7 +11,7 @@ import action from '../handlers/action'
 import handleError from '../handlers/error'
 import { ForbiddenError, NotFoundError } from '../http-errors'
 import dbConnect from '../mongoose'
-import { LikeArtworkSchema, VerifyArtworkSchema } from '../validations'
+import { LikeArtworkSchema, SubmitArtworkSchema, VerifyArtworkSchema } from '../validations'
 
 type PopulatedArtwork = Omit<IArtworkDoc, 'participant'> & {
   participant: IParticipantDoc
@@ -259,6 +259,79 @@ export async function judgeLikeArtwork(
     revalidatePath('/')
 
     return { success: true, data: JSON.parse(JSON.stringify({ ...artwork.toObject(), judgeLikes })) }
+  } catch (error) {
+    await session.abortTransaction()
+    return handleError(error) as ErrorResponse
+  } finally {
+    await session.endSession()
+  }
+}
+
+export async function submitArtwork(
+  params: SubmitArtworkParams,
+): Promise<ActionResponse<{ artworkId: string }>> {
+  const validationResult = await action({ params, schema: SubmitArtworkSchema })
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse
+  }
+
+  const {
+    name,
+    email,
+    state,
+    title,
+    medium,
+    artworkSize,
+    venue,
+    dateCreated,
+    artworkImage,
+    proveImage,
+    agreedToRules,
+  } = validationResult.params!
+
+  const session = await mongoose.startSession()
+
+  session.startTransaction()
+
+  try {
+    let participant = await Participant.findOne({ email }).session(session)
+
+    if (participant) {
+      const existingArtwork = await Artwork.findOne({ participant: participant._id }).session(
+        session,
+      )
+
+      if (existingArtwork) {
+        throw new ForbiddenError('You have already submitted an entry for this competition')
+      }
+    } else {
+      ;[participant] = await Participant.create([{ name, email, state }], { session })
+    }
+
+    const [artwork] = await Artwork.create(
+      [
+        {
+          participant: participant._id,
+          title,
+          medium,
+          artworkSize,
+          venue,
+          dateCreated,
+          artworkImage,
+          proveImage,
+          agreedToRules,
+          isVerified: false,
+        },
+      ],
+      { session },
+    )
+
+    await session.commitTransaction()
+
+    revalidatePath('/artworks')
+
+    return { success: true, data: { artworkId: artwork._id.toString() } }
   } catch (error) {
     await session.abortTransaction()
     return handleError(error) as ErrorResponse
