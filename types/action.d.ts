@@ -23,3 +23,12 @@ interface VerifyArtworkParams {
 interface LikeArtworkParams {
   ownerEmail: string;
 }
+
+interface RequestPublicVoteParams {
+  artworkId: string;
+  email: string;
+}
+
+interface ConfirmPublicVoteParams {
+  token: string;
+}

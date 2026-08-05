@@ -90,6 +90,18 @@ export const LikeArtworkSchema = z.object({
     .email({ message: 'Please provide a valid email address.' }),
 })
 
+export const RequestPublicVoteSchema = z.object({
+  artworkId: z.string().min(1, { message: 'Artwork is required.' }),
+  email: z
+    .string()
+    .min(1, { message: 'Email is required.' })
+    .email({ message: 'Please provide a valid email address.' }),
+})
+
+export const ConfirmPublicVoteSchema = z.object({
+  token: z.string().min(1, { message: 'Token is required.' }),
+})
+
 export const SignInWithOAuthSchema = z.object({
   provider: z.enum(['google', 'github']),
   providerAccountId: z.string().min(1, { message: 'Provider account ID is required.' }),

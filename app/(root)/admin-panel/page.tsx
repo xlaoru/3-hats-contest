@@ -1,9 +1,15 @@
-import { signOut } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { getArtworks } from "@/lib/actions/artwork.action";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 const List = async () => {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        redirect("/")
+    }
+
     const { success, data: artworks } = await getArtworks()
 
     if (!success || !artworks) {

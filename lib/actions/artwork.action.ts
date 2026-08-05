@@ -53,6 +53,73 @@ export async function getArtworks(): Promise<ActionResponse<PopulatedArtwork[]>>
   }
 }
 
+export type PublicArtwork = {
+  _id: string
+  title: string
+  medium: string
+  artworkSize: string
+  artworkImage: string
+  participant: { name: string; state: string }
+}
+
+export async function getPublicArtworks(): Promise<ActionResponse<PublicArtwork[]>> {
+  try {
+    await dbConnect()
+
+    const artworks = await Artwork.find({ isVerified: true })
+      .sort({ createdAt: -1 })
+      .populate<{ participant: IParticipantDoc }>('participant', 'name state')
+
+    const data: PublicArtwork[] = artworks.map((artwork) => ({
+      _id: artwork._id.toString(),
+      title: artwork.title,
+      medium: artwork.medium,
+      artworkSize: artwork.artworkSize,
+      artworkImage: artwork.artworkImage,
+      participant: {
+        name: artwork.participant.name,
+        state: artwork.participant.state,
+      },
+    }))
+
+    return { success: true, data: JSON.parse(JSON.stringify(data)) }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
+  }
+}
+
+export async function getPublicArtworkById(
+  artworkId: string,
+): Promise<ActionResponse<PublicArtwork>> {
+  try {
+    await dbConnect()
+
+    const artwork = await Artwork.findOne({ _id: artworkId, isVerified: true }).populate<{
+      participant: IParticipantDoc
+    }>('participant', 'name state')
+
+    if (!artwork) {
+      throw new NotFoundError('Artwork')
+    }
+
+    const data: PublicArtwork = {
+      _id: artwork._id.toString(),
+      title: artwork.title,
+      medium: artwork.medium,
+      artworkSize: artwork.artworkSize,
+      artworkImage: artwork.artworkImage,
+      participant: {
+        name: artwork.participant.name,
+        state: artwork.participant.state,
+      },
+    }
+
+    return { success: true, data: JSON.parse(JSON.stringify(data)) }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
+  }
+}
+
 export async function getArtworkByOwnerEmail(
   ownerEmail: string,
 ): Promise<ActionResponse<PopulatedArtwork>> {
