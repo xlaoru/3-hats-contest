@@ -4,6 +4,8 @@
 /node_modules
 /.pnp
 .pnp.*
+.prettierrc
+/.vscode/settings.json
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
