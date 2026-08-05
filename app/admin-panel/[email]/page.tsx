@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import ArtworkDetails from "./artwork-details";
 import ArtworkGallery from "./artwork-gallery";
 
-const ArtworkPage = async (props: PageProps<"/[email]">) => {
+const ArtworkPage = async (props: PageProps<"/admin-panel/[email]">) => {
     const { email } = await props.params;
     const { success, data: artwork } = await getArtworkByOwnerEmail(
         decodeURIComponent(email)
@@ -18,7 +18,7 @@ const ArtworkPage = async (props: PageProps<"/[email]">) => {
         <div className="min-h-screen bg-gray-100 px-6 py-10">
             <div className="mx-auto max-w-3xl">
                 <Link
-                    href="/"
+                    href="/admin-panel"
                     className="text-sm text-gray-500 hover:text-gray-700 transition-colors inline-flex items-center gap-1 mb-6"
                 >
                     ← Back to artworks
