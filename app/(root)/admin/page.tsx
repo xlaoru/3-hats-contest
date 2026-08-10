@@ -32,7 +32,7 @@ const List = async () => {
                         {artworks.map((artwork, index) => (
                             <li key={index}>
                                 <Link
-                                    href={`/admin-panel/${encodeURIComponent(artwork.participant.email)}`}
+                                    href={`/admin/${encodeURIComponent(artwork.participant.email)}`}
                                     className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors"
                                 >
                                     <img

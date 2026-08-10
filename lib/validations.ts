@@ -1,5 +1,16 @@
 import { z } from 'zod'
 
+export const ArtworkStatusEnum = z.enum([
+  'pending',
+  'clarification',
+  'approved',
+  'published',
+  'rejected',
+  'withdrawn',
+])
+
+export type ArtworkStatus = z.infer<typeof ArtworkStatusEnum>
+
 export const SignInSchema = z.object({
   email: z
     .string()
@@ -81,6 +92,7 @@ export const VerifyArtworkSchema = z.object({
     .string()
     .min(1, { message: 'Owner email is required.' })
     .email({ message: 'Please provide a valid email address.' }),
+  status: ArtworkStatusEnum,
 })
 
 export const LikeArtworkSchema = z.object({
@@ -113,6 +125,10 @@ export const SubmitArtworkSchema = z.object({
   agreedToRules: z.boolean().refine((val) => val === true, {
     message: 'You must agree to the competition rules.',
   }),
+})
+
+export const ConfirmArtworkSubmissionSchema = z.object({
+  token: z.string().min(1, { message: 'Token is required.' }),
 })
 
 export const RequestPublicVoteSchema = z.object({

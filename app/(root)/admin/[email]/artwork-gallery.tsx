@@ -53,7 +53,6 @@ const ArtworkGallery = ({ images }: { images: GalleryImage[] }) => {
                     </button>
                 ))}
             </div>
-
             {openIndex !== null && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-6"

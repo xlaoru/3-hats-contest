@@ -1,5 +1,7 @@
 import { Document, model, models, Schema, Types } from 'mongoose'
 
+import { ArtworkStatusEnum, type ArtworkStatus } from '@/lib/validations'
+
 export interface IArtwork {
   participant: Types.ObjectId
   title: string
@@ -10,7 +12,7 @@ export interface IArtwork {
   artworkImage: string
   proveImage: string
   agreedToRules: boolean
-  isVerified: boolean
+  status: ArtworkStatus
 }
 
 export interface IArtworkDoc extends IArtwork, Document {}
@@ -26,7 +28,12 @@ const ArtworkSchema = new Schema<IArtwork>(
     artworkImage: { type: String, required: true },
     proveImage: { type: String, required: true },
     agreedToRules: { type: Boolean, required: true, default: false },
-    isVerified: { type: Boolean, required: true, default: false },
+    status: {
+      type: String,
+      enum: ArtworkStatusEnum.options,
+      required: true,
+      default: 'pending',
+    },
   },
   { timestamps: true },
 )

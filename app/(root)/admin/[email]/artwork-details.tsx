@@ -1,51 +1,32 @@
 "use client";
 
-import { judgeLikeArtwork, verifyArtwork } from "@/lib/actions/artwork.action";
+import { verifyArtwork } from "@/lib/actions/artwork.action";
+import type { ArtworkStatus } from "@/lib/validations";
 import { useState, useTransition } from "react";
 
 type ArtworkDetailsProps = {
     title: string;
     ownerEmail: string;
     ownerName: string;
-    initialJudgeLikes: number;
-    initialHasVoted: boolean;
-    initialIsVerified: boolean;
+    initialStatus: ArtworkStatus
 };
 
 const ArtworkDetails = ({
     title,
     ownerEmail,
     ownerName,
-    initialJudgeLikes,
-    initialHasVoted,
-    initialIsVerified,
+    initialStatus,
 }: ArtworkDetailsProps) => {
-    const [judgeLikes, setJudgeLikes] = useState(initialJudgeLikes);
-    const [hasVoted, setHasVoted] = useState(initialHasVoted);
-    const [isVerified, setIsVerified] = useState(initialIsVerified);
+    const [status, setStatus] = useState(initialStatus);
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
 
-    const handleJudgeLike = () => {
+    const handleVerify = (status: 'pending' | 'clarification' | 'approved' | 'published' | 'rejected' | 'withdrawn') => {
         startTransition(async () => {
-            const result = await judgeLikeArtwork({ ownerEmail });
+            const result = await verifyArtwork({ ownerEmail, status });
 
             if (result.success && result.data) {
-                setJudgeLikes(result.data.judgeLikes);
-                setHasVoted(true);
-                setError(null);
-            } else {
-                setError(result.error?.message ?? "Failed to register your vote");
-            }
-        });
-    };
-
-    const handleVerify = () => {
-        startTransition(async () => {
-            const result = await verifyArtwork({ ownerEmail });
-
-            if (result.success && result.data) {
-                setIsVerified(result.data.isVerified);
+                setStatus(result.data.status);
                 setError(null);
             } else {
                 setError(result.error?.message ?? "Failed to update verification");
@@ -58,12 +39,12 @@ const ArtworkDetails = ({
             <div className="flex items-start justify-between gap-4">
                 <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
                 <span
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${isVerified
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 capitalize ${status === "approved" || status === "published"
                         ? "bg-green-50 text-green-700"
                         : "bg-amber-50 text-amber-700"
                         }`}
                 >
-                    {isVerified ? "Verified" : "Pending"}
+                    {status}
                 </span>
             </div>
 
@@ -79,27 +60,27 @@ const ArtworkDetails = ({
             <div className="flex gap-3 mt-6">
                 <button
                     type="button"
-                    disabled={isPending || hasVoted}
-                    onClick={handleJudgeLike}
-                    className={`flex-1 inline-flex items-center justify-center gap-2 font-semibold py-2.5 rounded-lg border transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${hasVoted
-                        ? "bg-amber-50 border-amber-100 text-amber-600"
-                        : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                        }`}
-                >
-                    <span>⭐</span>
-                    {hasVoted ? `Voted (${judgeLikes})` : `Judge Like (${judgeLikes})`}
-                </button>
-                <button
-                    type="button"
                     disabled={isPending}
-                    onClick={handleVerify}
-                    className={`flex-1 inline-flex items-center justify-center gap-2 font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${isVerified
+                    onClick={() => handleVerify("approved")}
+                    className={`flex-1 inline-flex items-center justify-center gap-2 font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${status === "approved"
                         ? "bg-green-500 hover:bg-green-600 active:bg-green-700 text-white"
                         : "bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white"
                         }`}
                 >
                     <span>✓</span>
-                    {isVerified ? "Verified" : "Verify"}
+                    {status === "approved" ? "Approved" : "Approve"}
+                </button>
+                <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => handleVerify("clarification")}
+                    className={`flex-1 inline-flex items-center justify-center gap-2 font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${status === "approved"
+                        ? "bg-green-500 hover:bg-green-600 active:bg-green-700 text-white"
+                        : "bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white"
+                        }`}
+                >
+                    <span>✓</span>
+                    {status === "clarification" ? "Requested Clarification" : "Request Clarification"}
                 </button>
             </div>
 

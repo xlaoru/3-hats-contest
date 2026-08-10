@@ -1,17 +1,42 @@
 'use server'
 
 import { auth } from '@/auth'
-import Artwork, { IArtworkDoc } from '@/database/artwork.model'
+import Artwork, { IArtwork, IArtworkDoc } from '@/database/artwork.model'
 import JudgeVote from '@/database/judgeVote.model'
 import Participant, { IParticipantDoc } from '@/database/participant.model'
 import { ActionResponse, ErrorResponse } from '@/types/global'
 import mongoose from 'mongoose'
 import { revalidatePath } from 'next/cache'
+import { sendSubmissionVerificationEmail } from '../emails/submission-verification'
 import action from '../handlers/action'
 import handleError from '../handlers/error'
 import { ForbiddenError, NotFoundError } from '../http-errors'
 import dbConnect from '../mongoose'
-import { LikeArtworkSchema, SubmitArtworkSchema, VerifyArtworkSchema } from '../validations'
+import { createSubmissionVerificationToken, hashToken } from '../tokens'
+import {
+  ConfirmArtworkSubmissionSchema,
+  LikeArtworkSchema,
+  SubmitArtworkSchema,
+  VerifyArtworkSchema,
+} from '../validations'
+
+const SUBMISSION_RESEND_COOLDOWN_MS = 60 * 1000
+
+async function upsertArtworkForParticipant(
+  participantId: mongoose.Types.ObjectId,
+  data: Omit<IArtwork, 'participant' | 'status'>,
+  existingArtwork: IArtworkDoc | null,
+  session: mongoose.ClientSession,
+): Promise<IArtworkDoc> {
+  if (existingArtwork) {
+    existingArtwork.set({ ...data, status: 'pending' })
+    return existingArtwork.save({ session })
+  }
+
+  const [artwork] = await Artwork.create([{ participant: participantId, ...data }], { session })
+
+  return artwork
+}
 
 type PopulatedArtwork = Omit<IArtworkDoc, 'participant'> & {
   participant: IParticipantDoc
@@ -151,7 +176,9 @@ export async function getArtworkByOwnerEmail(
 
     return {
       success: true,
-      data: JSON.parse(JSON.stringify({ ...artwork.toObject(), judgeLikes, hasVoted: Boolean(hasVoted) })),
+      data: JSON.parse(
+        JSON.stringify({ ...artwork.toObject(), judgeLikes, hasVoted: Boolean(hasVoted) }),
+      ),
     }
   } catch (error) {
     return handleError(error) as ErrorResponse
@@ -171,7 +198,7 @@ export async function verifyArtwork(
     return handleError(validationResult) as ErrorResponse
   }
 
-  const { ownerEmail } = validationResult.params!
+  const { ownerEmail, status } = validationResult.params!
 
   const session = await mongoose.startSession()
 
@@ -190,7 +217,7 @@ export async function verifyArtwork(
       throw new NotFoundError('Artwork')
     }
 
-    artwork.isVerified = !artwork.isVerified
+    artwork.status = status
     await artwork.save({ session })
 
     await session.commitTransaction()
@@ -258,7 +285,10 @@ export async function judgeLikeArtwork(
     revalidatePath(`/${encodeURIComponent(ownerEmail)}`)
     revalidatePath('/')
 
-    return { success: true, data: JSON.parse(JSON.stringify({ ...artwork.toObject(), judgeLikes })) }
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify({ ...artwork.toObject(), judgeLikes })),
+    }
   } catch (error) {
     await session.abortTransaction()
     return handleError(error) as ErrorResponse
@@ -296,38 +326,62 @@ export async function submitArtwork(
 
   try {
     let participant = await Participant.findOne({ email }).session(session)
+    let existingArtwork: IArtworkDoc | null = null
 
     if (participant) {
-      const existingArtwork = await Artwork.findOne({ participant: participant._id }).session(
-        session,
-      )
+      existingArtwork = await Artwork.findOne({ participant: participant._id }).session(session)
 
-      if (existingArtwork) {
+      if (existingArtwork && participant.emailVerifiedAt) {
         throw new ForbiddenError('You have already submitted an entry for this competition')
       }
+
+      if (
+        existingArtwork &&
+        Date.now() - participant.updatedAt.getTime() < SUBMISSION_RESEND_COOLDOWN_MS
+      ) {
+        throw new ForbiddenError(
+          'Please wait a moment before requesting another confirmation email',
+        )
+      }
+
+      participant.name = name
+      participant.state = state
     } else {
       ;[participant] = await Participant.create([{ name, email, state }], { session })
     }
 
-    const [artwork] = await Artwork.create(
-      [
-        {
-          participant: participant._id,
-          title,
-          medium,
-          artworkSize,
-          venue,
-          dateCreated,
-          artworkImage,
-          proveImage,
-          agreedToRules,
-          isVerified: false,
-        },
-      ],
-      { session },
+    const artwork = await upsertArtworkForParticipant(
+      participant._id,
+      {
+        title,
+        medium,
+        artworkSize,
+        venue,
+        dateCreated,
+        artworkImage,
+        proveImage,
+        agreedToRules,
+      },
+      existingArtwork,
+      session,
     )
 
+    const { token, tokenHash, expiresAt } = createSubmissionVerificationToken()
+
+    participant.emailVerifiedAt = null
+    participant.verificationTokenHash = tokenHash
+    participant.verificationTokenExpiresAt = expiresAt
+    await participant.save({ session })
+
     await session.commitTransaction()
+
+    const confirmUrl = `${process.env.NEXT_PUBLIC_SERVER_URL}/artworks/confirm?token=${token}`
+
+    await sendSubmissionVerificationEmail({
+      to: participant.email,
+      artworkTitle: artwork.title,
+      confirmUrl,
+    })
 
     revalidatePath('/artworks')
 
@@ -337,5 +391,57 @@ export async function submitArtwork(
     return handleError(error) as ErrorResponse
   } finally {
     await session.endSession()
+  }
+}
+
+export async function confirmArtworkSubmission(
+  params: ConfirmArtworkSubmissionParams,
+): Promise<ActionResponse<{ artworkId: string; artworkTitle: string }>> {
+  const validationResult = await action({ params, schema: ConfirmArtworkSubmissionSchema })
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse
+  }
+
+  const { token } = validationResult.params!
+
+  try {
+    const tokenHash = hashToken(token)
+
+    const participant = await Participant.findOne({ verificationTokenHash: tokenHash })
+
+    if (!participant) {
+      throw new NotFoundError('Confirmation link')
+    }
+
+    const artwork = await Artwork.findOne({ participant: participant._id })
+
+    if (!artwork) {
+      throw new NotFoundError('Artwork')
+    }
+
+    // Already confirmed (e.g. a repeat click, or an email client prefetching the
+    // link) — the token stays valid as a lookup key even after use, so this is a
+    // no-op that just re-reports success instead of erroring.
+    if (!participant.emailVerifiedAt) {
+      if (
+        !participant.verificationTokenExpiresAt ||
+        participant.verificationTokenExpiresAt.getTime() < Date.now()
+      ) {
+        throw new ForbiddenError(
+          'This confirmation link has expired, please submit your entry again',
+        )
+      }
+
+      participant.emailVerifiedAt = new Date()
+      await participant.save()
+    }
+
+    return {
+      success: true,
+      data: { artworkId: artwork._id.toString(), artworkTitle: artwork.title },
+    }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
   }
 }

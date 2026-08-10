@@ -76,13 +76,18 @@ const SubmitArtworkForm = () => {
     if (referenceId) {
         return (
             <div className="bg-white rounded-2xl shadow-md p-8 text-center">
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Entry received 🎨</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email 📧</h2>
                 <p className="text-sm text-gray-600">
+                    We&apos;ve sent a confirmation link to{" "}
+                    <span className="font-medium">{form.email}</span>. Click it to confirm your
+                    entry.
+                </p>
+                <p className="text-sm text-gray-600 mt-2">
                     Reference number: <span className="font-mono">{referenceId}</span>
                 </p>
                 <p className="text-sm text-gray-600 mt-2">
-                    Your entry is waiting for admin approval. Once approved, it will appear in the
-                    public gallery.
+                    Once confirmed, your entry will wait for admin approval before appearing in
+                    the public gallery.
                 </p>
             </div>
         );
