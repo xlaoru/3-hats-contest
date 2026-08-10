@@ -49,6 +49,11 @@ interface GetArtworksParams {
   dateTo?: Date
 }
 
+interface UpdateCompetitionDateParams {
+  id: string
+  date: Date
+}
+
 interface SubmitArtworkParams {
   name: string
   email: string

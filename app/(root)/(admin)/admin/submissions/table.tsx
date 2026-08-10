@@ -37,6 +37,15 @@ const statusStyles: Record<ArtworkStatus, string> = {
 
 const SEARCH_DEBOUNCE_MS = 400
 
+const dateCreatedFormatter = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+})
+
+function formatDateCreated(value: string | Date): string {
+    return dateCreatedFormatter.format(new Date(value))
+}
+
 function getPageNumbers(current: number, totalPages: number): (number | "ellipsis")[] {
     if (totalPages <= 7) {
         return Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -413,7 +422,7 @@ export default function Table({ artworks, total, isNext, page, pageSize, filterO
                                     </span>
                                 </td>
                                 <td className="px-3 py-4 align-top">
-                                    <div className="font-medium text-zinc-900">{`${item.dateCreated}`}</div>
+                                    <div className="font-medium text-zinc-900">{formatDateCreated(item.dateCreated)}</div>
                                 </td>
                                 <td className="w-10 px-6 py-4 align-top" />
                             </tr>

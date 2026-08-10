@@ -1,7 +1,9 @@
 import { auth } from "@/auth";
 import { getArtworkFilterOptions, getArtworks } from "@/lib/actions/artwork.action";
+import { getCompetitionDates } from "@/lib/actions/competitionDate.action";
 import { ArtworkStatus } from "@/lib/validations";
 import { notFound, redirect } from "next/navigation";
+import CompetitionTimeline from "./competition-timeline";
 import Overview from "./overview";
 import QuickActions from "./quick-actions";
 import Table from "./table";
@@ -37,9 +39,10 @@ const Artworks = async (props: PageProps<"/admin/submissions">) => {
     const dateFrom = parseDate(searchParams.dateFrom);
     const dateTo = parseDate(searchParams.dateTo);
 
-    const [{ success, data }, filterOptionsResult] = await Promise.all([
+    const [{ success, data }, filterOptionsResult, competitionDatesResult] = await Promise.all([
         getArtworks({ page, pageSize: PAGE_SIZE, query, status, regions, mediums, dateFrom, dateTo }),
         getArtworkFilterOptions(),
+        getCompetitionDates(),
     ])
 
     if (!success || !data) {
@@ -49,6 +52,10 @@ const Artworks = async (props: PageProps<"/admin/submissions">) => {
     const filterOptions = filterOptionsResult.success && filterOptionsResult.data
         ? filterOptionsResult.data
         : { statusCounts: {} as Record<ArtworkStatus, number>, total: 0, regions: [], mediums: [] };
+
+    const competitionDates = competitionDatesResult.success && competitionDatesResult.data
+        ? competitionDatesResult.data
+        : [];
 
     return (
         <div className="min-h-screen bg-zinc-100 px-6 py-10 flex flex-col gap-8">
@@ -78,6 +85,7 @@ const Artworks = async (props: PageProps<"/admin/submissions">) => {
                 <div className="w-[25%] min-w-0 flex flex-col gap-6">
                     <Overview filterOptions={filterOptions} />
                     <QuickActions filterOptions={filterOptions} />
+                    <CompetitionTimeline dates={competitionDates} />
                 </div>
             </div>
         </div>
