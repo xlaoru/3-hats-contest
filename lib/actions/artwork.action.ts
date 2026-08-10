@@ -5,7 +5,7 @@ import Artwork, { IArtwork, IArtworkDoc } from '@/database/artwork.model'
 import JudgeVote from '@/database/judgeVote.model'
 import Participant, { IParticipantDoc } from '@/database/participant.model'
 import { ActionResponse, ErrorResponse } from '@/types/global'
-import mongoose from 'mongoose'
+import mongoose, { QueryFilter } from 'mongoose'
 import { revalidatePath } from 'next/cache'
 import { sendSubmissionVerificationEmail } from '../emails/submission-verification'
 import action from '../handlers/action'
@@ -13,9 +13,12 @@ import handleError from '../handlers/error'
 import { ForbiddenError, NotFoundError } from '../http-errors'
 import dbConnect from '../mongoose'
 import { createSubmissionVerificationToken, hashToken } from '../tokens'
-import { buildSlugMap } from '../utils'
+import { buildSlugMap, escapeRegExp } from '../utils'
 import {
+  ArtworkStatus,
+  ArtworkStatusEnum,
   ConfirmArtworkSubmissionSchema,
+  GetArtworksSchema,
   LikeArtworkSchema,
   SubmitArtworkSchema,
   VerifyArtworkSchema,
@@ -39,7 +42,8 @@ async function upsertArtworkForParticipant(
   return artwork
 }
 
-type PopulatedArtwork = Omit<IArtworkDoc, 'participant'> & {
+export type PopulatedArtwork = Omit<IArtworkDoc, 'participant' | '_id'> & {
+  _id: string
   participant: IParticipantDoc
   judgeLikes: number
   hasVoted?: boolean
@@ -57,32 +61,145 @@ async function getJudgeLikesCounts(
   return new Map(counts.map(({ _id, count }) => [_id.toString(), count]))
 }
 
-export async function getArtworks(): Promise<ActionResponse<PopulatedArtwork[]>> {
-  try {
-    await dbConnect()
+export type PaginatedArtworks = {
+  artworks: PopulatedArtwork[]
+  isNext: boolean
+  total: number
+}
 
-    const artworks = await Artwork.find().populate<{ participant: IParticipantDoc }>('participant')
+export async function getArtworks(
+  params: GetArtworksParams = {},
+): Promise<ActionResponse<PaginatedArtworks>> {
+  const validationResult = await action({
+    params,
+    schema: GetArtworksSchema,
+  })
 
-    if (!artworks) {
-      throw new Error('Artworks not found')
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse
+  }
+
+  const { page, pageSize, query, status, regions, mediums, dateFrom, dateTo } =
+    validationResult.params!
+
+  const skip = (page! - 1) * pageSize!
+  const limit = pageSize!
+
+  const filterQuery: QueryFilter<typeof Artwork> = {}
+
+  if (status && status.length > 0) {
+    filterQuery.status = { $in: status }
+  }
+
+  if (query) {
+    filterQuery.title = { $regex: escapeRegExp(query), $options: 'i' }
+  }
+
+  if (mediums && mediums.length > 0) {
+    filterQuery.medium = {
+      $regex: mediums.map(escapeRegExp).join('|'),
+      $options: 'i',
     }
+  }
+
+  if (dateFrom || dateTo) {
+    filterQuery.createdAt = {
+      ...(dateFrom ? { $gte: dateFrom } : {}),
+      ...(dateTo ? { $lte: dateTo } : {}),
+    }
+  }
+
+  if (regions && regions.length > 0) {
+    const matchingParticipants = await Participant.find({ state: { $in: regions } }, '_id').lean()
+    filterQuery.participant = { $in: matchingParticipants.map((participant) => participant._id) }
+  }
+
+  try {
+    const [total, artworks] = await Promise.all([
+      Artwork.countDocuments(filterQuery),
+      Artwork.find(filterQuery)
+        .populate<{ participant: IParticipantDoc }>('participant')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+    ])
 
     const judgeLikesCounts = await getJudgeLikesCounts(artworks.map((artwork) => artwork._id))
+
+    // Slugs must stay unique across the whole collection (they're used as review-page
+    // URLs), so disambiguation runs over every artwork, not just the current page.
+    const siblingTitles = await Artwork.find({}, 'title createdAt').lean()
     const slugMap = buildSlugMap(
-      artworks.map((artwork) => ({
-        _id: artwork._id.toString(),
-        title: artwork.title,
-        createdAt: artwork.createdAt,
+      siblingTitles.map((item) => ({
+        _id: item._id.toString(),
+        title: item.title,
+        createdAt: item.createdAt,
       })),
     )
 
-    const data = artworks.map((artwork) => ({
-      ...artwork.toObject(),
-      judgeLikes: judgeLikesCounts.get(artwork._id.toString()) ?? 0,
-      slug: slugMap.get(artwork._id.toString())!,
-    }))
+    const data: PaginatedArtworks = {
+      artworks: artworks.map((artwork) => ({
+        ...artwork.toObject(),
+        judgeLikes: judgeLikesCounts.get(artwork._id.toString()) ?? 0,
+        slug: slugMap.get(artwork._id.toString())!,
+      })),
+      isNext: total > skip + artworks.length,
+      total,
+    }
 
     return { success: true, data: JSON.parse(JSON.stringify(data)) }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
+  }
+}
+
+export type ArtworkFilterOptions = {
+  statusCounts: Record<ArtworkStatus, number>
+  total: number
+  regions: string[]
+  mediums: string[]
+}
+
+export async function getArtworkFilterOptions(): Promise<ActionResponse<ArtworkFilterOptions>> {
+  try {
+    await dbConnect()
+
+    const [statusAgg, regions, rawMediums] = await Promise.all([
+      Artwork.aggregate<{ _id: ArtworkStatus; count: number }>([
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      Participant.distinct('state'),
+      Artwork.distinct('medium'),
+    ])
+
+    const statusCounts = Object.fromEntries(
+      ArtworkStatusEnum.options.map((option) => [option, 0]),
+    ) as Record<ArtworkStatus, number>
+
+    let total = 0
+    for (const { _id, count } of statusAgg) {
+      statusCounts[_id] = count
+      total += count
+    }
+
+    const mediums = Array.from(
+      new Set(
+        (rawMediums as string[])
+          .flatMap((value) => value.split(','))
+          .map((value) => value.trim())
+          .filter(Boolean),
+      ),
+    ).sort()
+
+    return {
+      success: true,
+      data: {
+        statusCounts,
+        total,
+        regions: (regions as string[]).filter(Boolean).sort(),
+        mediums,
+      },
+    }
   } catch (error) {
     return handleError(error) as ErrorResponse
   }

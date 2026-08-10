@@ -130,6 +130,17 @@ export const ConfirmArtworkSubmissionSchema = z.object({
   token: z.string().min(1, { message: 'Token is required.' }),
 })
 
+export const GetArtworksSchema = z.object({
+  page: z.coerce.number().int().min(1).optional().default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).optional().default(8),
+  query: z.string().trim().optional(),
+  status: z.array(ArtworkStatusEnum).optional(),
+  regions: z.array(z.string()).optional(),
+  mediums: z.array(z.string()).optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
+})
+
 export const RequestPublicVoteSchema = z.object({
   artworkId: z.string().min(1, { message: 'Artwork is required.' }),
   email: z

@@ -1,20 +1,52 @@
 import { auth } from "@/auth";
-import { getArtworks } from "@/lib/actions/artwork.action";
+import { getArtworkFilterOptions, getArtworks } from "@/lib/actions/artwork.action";
+import { ArtworkStatus } from "@/lib/validations";
 import { notFound, redirect } from "next/navigation";
 import Table from "./table";
 
-const Artworks = async () => {
+const PAGE_SIZE = 10
+
+function parseList(value: string | string[] | undefined): string[] | undefined {
+    const raw = Array.isArray(value) ? value.join(",") : value;
+    const list = raw?.split(",").map((item) => item.trim()).filter(Boolean);
+    return list && list.length > 0 ? list : undefined;
+}
+
+function parseDate(value: string | string[] | undefined): Date | undefined {
+    const raw = Array.isArray(value) ? value[0] : value;
+    if (!raw) return undefined;
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+const Artworks = async (props: PageProps<"/admin/submissions">) => {
     const session = await auth();
 
     if (!session?.user?.id) {
         redirect("/")
     }
 
-    const { success, data: artworks } = await getArtworks()
+    const searchParams = await props.searchParams;
+    const page = Number(searchParams.page) || 1;
+    const query = typeof searchParams.query === "string" ? searchParams.query : undefined;
+    const status = parseList(searchParams.status) as ArtworkStatus[] | undefined;
+    const regions = parseList(searchParams.region);
+    const mediums = parseList(searchParams.medium);
+    const dateFrom = parseDate(searchParams.dateFrom);
+    const dateTo = parseDate(searchParams.dateTo);
 
-    if (!success || !artworks) {
+    const [{ success, data }, filterOptionsResult] = await Promise.all([
+        getArtworks({ page, pageSize: PAGE_SIZE, query, status, regions, mediums, dateFrom, dateTo }),
+        getArtworkFilterOptions(),
+    ])
+
+    if (!success || !data) {
         return notFound();
     }
+
+    const filterOptions = filterOptionsResult.success && filterOptionsResult.data
+        ? filterOptionsResult.data
+        : { statusCounts: {} as Record<ArtworkStatus, number>, total: 0, regions: [], mediums: [] };
 
     return (
         <div className="min-h-screen bg-zinc-100 px-6 py-10 flex flex-col gap-8">
@@ -31,7 +63,14 @@ const Artworks = async () => {
                 </div>
             </div>
             <div className="">
-                <Table />
+                <Table
+                    artworks={data.artworks}
+                    total={data.total}
+                    isNext={data.isNext}
+                    page={page}
+                    pageSize={PAGE_SIZE}
+                    filterOptions={filterOptions}
+                />
             </div>
         </div>
     );

@@ -38,6 +38,17 @@ interface ConfirmArtworkSubmissionParams {
   token: string
 }
 
+interface GetArtworksParams {
+  page?: number
+  pageSize?: number
+  query?: string
+  status?: import('@/lib/validations').ArtworkStatus[]
+  regions?: string[]
+  mediums?: string[]
+  dateFrom?: Date
+  dateTo?: Date
+}
+
 interface SubmitArtworkParams {
   name: string
   email: string
