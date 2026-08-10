@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { getArtworkFilterOptions, getArtworks } from "@/lib/actions/artwork.action";
 import { ArtworkStatus } from "@/lib/validations";
 import { notFound, redirect } from "next/navigation";
+import Overview from "./overview";
 import Table from "./table";
 
 const PAGE_SIZE = 10
@@ -62,15 +63,20 @@ const Artworks = async (props: PageProps<"/admin/submissions">) => {
                     </div>
                 </div>
             </div>
-            <div className="">
-                <Table
-                    artworks={data.artworks}
-                    total={data.total}
-                    isNext={data.isNext}
-                    page={page}
-                    pageSize={PAGE_SIZE}
-                    filterOptions={filterOptions}
-                />
+            <div className="flex flex-row gap-6">
+                <div className="w-[75%] min-w-0">
+                    <Table
+                        artworks={data.artworks}
+                        total={data.total}
+                        isNext={data.isNext}
+                        page={page}
+                        pageSize={PAGE_SIZE}
+                        filterOptions={filterOptions}
+                    />
+                </div>
+                <div className="w-[25%] min-w-0">
+                    <Overview filterOptions={filterOptions} />
+                </div>
             </div>
         </div>
     );

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     Pagination,
@@ -35,6 +35,8 @@ const statusStyles: Record<ArtworkStatus, string> = {
     withdrawn: "bg-zinc-200 text-zinc-600",
 }
 
+const SEARCH_DEBOUNCE_MS = 400
+
 function getPageNumbers(current: number, totalPages: number): (number | "ellipsis")[] {
     if (totalPages <= 7) {
         return Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -58,6 +60,42 @@ function getPageNumbers(current: number, totalPages: number): (number | "ellipsi
 
 function toggleValue<T>(list: T[], value: T): T[] {
     return list.includes(value) ? list.filter((item) => item !== value) : [...list, value]
+}
+
+type SearchInputProps = {
+    initialValue: string
+    onDebouncedChange: (value: string) => void
+}
+
+function SearchInput({ initialValue, onDebouncedChange }: SearchInputProps) {
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        }
+    }, [])
+
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value
+
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+
+        timeoutRef.current = setTimeout(() => onDebouncedChange(value), SEARCH_DEBOUNCE_MS)
+    }
+
+    return (
+        <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
+            <input
+                type="text"
+                defaultValue={initialValue}
+                onChange={handleChange}
+                placeholder="Search by name, title or reference..."
+                className="w-full rounded-lg border border-zinc-200 py-2 pr-3 pl-9 text-sm text-zinc-700 placeholder:text-zinc-400 focus:outline-none"
+            />
+        </div>
+    )
 }
 
 type FilterFormValues = {
@@ -237,12 +275,6 @@ export default function Table({ artworks, total, isNext, page, pageSize, filterO
         router.push(buildUrl({ status: key === "all" ? undefined : [key], page: undefined }))
     }
 
-    const submitSearch = (event: React.FormEvent) => {
-        event.preventDefault()
-        const value = new FormData(event.currentTarget as HTMLFormElement).get("query")
-        router.push(buildUrl({ query: typeof value === "string" && value ? value : undefined, page: undefined }))
-    }
-
     const applyFilters = (values: FilterFormValues) => {
         router.push(
             buildUrl({
@@ -292,16 +324,10 @@ export default function Table({ artworks, total, isNext, page, pageSize, filterO
                 ))}
             </div>
             <div className="flex items-center justify-between gap-4 px-6 py-4">
-                <form key={currentQuery} onSubmit={submitSearch} className="relative w-full max-w-sm">
-                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
-                    <input
-                        type="text"
-                        name="query"
-                        defaultValue={currentQuery}
-                        placeholder="Search by name, title or reference..."
-                        className="w-full rounded-lg border border-zinc-200 py-2 pr-3 pl-9 text-sm text-zinc-700 placeholder:text-zinc-400 focus:outline-none"
-                    />
-                </form>
+                <SearchInput
+                    initialValue={currentQuery}
+                    onDebouncedChange={(value) => router.push(buildUrl({ query: value || undefined, page: undefined }))}
+                />
                 <div className="flex shrink-0 items-center gap-3">
                     <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
                         <PopoverTrigger className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700">

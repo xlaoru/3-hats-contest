@@ -85,34 +85,56 @@ export async function getArtworks(
   const skip = (page! - 1) * pageSize!
   const limit = pageSize!
 
-  const filterQuery: QueryFilter<typeof Artwork> = {}
+  const andConditions: QueryFilter<typeof Artwork>[] = []
 
   if (status && status.length > 0) {
-    filterQuery.status = { $in: status }
-  }
-
-  if (query) {
-    filterQuery.title = { $regex: escapeRegExp(query), $options: 'i' }
+    andConditions.push({ status: { $in: status } })
   }
 
   if (mediums && mediums.length > 0) {
-    filterQuery.medium = {
-      $regex: mediums.map(escapeRegExp).join('|'),
-      $options: 'i',
-    }
+    andConditions.push({
+      medium: {
+        $regex: mediums.map(escapeRegExp).join('|'),
+        $options: 'i',
+      },
+    })
   }
 
   if (dateFrom || dateTo) {
-    filterQuery.createdAt = {
-      ...(dateFrom ? { $gte: dateFrom } : {}),
-      ...(dateTo ? { $lte: dateTo } : {}),
-    }
+    andConditions.push({
+      createdAt: {
+        ...(dateFrom ? { $gte: dateFrom } : {}),
+        ...(dateTo ? { $lte: dateTo } : {}),
+      },
+    })
   }
 
   if (regions && regions.length > 0) {
-    const matchingParticipants = await Participant.find({ state: { $in: regions } }, '_id').lean()
-    filterQuery.participant = { $in: matchingParticipants.map((participant) => participant._id) }
+    const regionParticipants = await Participant.find({ state: { $in: regions } }, '_id').lean()
+    andConditions.push({
+      participant: { $in: regionParticipants.map((participant) => participant._id) },
+    })
   }
+
+  if (query) {
+    // Titles live on the artwork, but the search box also promises "name" —
+    // that lives on the participant, so it needs its own lookup to join in.
+    const escapedQuery = escapeRegExp(query)
+    const matchingParticipants = await Participant.find(
+      { name: { $regex: escapedQuery, $options: 'i' } },
+      '_id',
+    ).lean()
+
+    andConditions.push({
+      $or: [
+        { title: { $regex: escapedQuery, $options: 'i' } },
+        { participant: { $in: matchingParticipants.map((participant) => participant._id) } },
+      ],
+    })
+  }
+
+  const filterQuery: QueryFilter<typeof Artwork> =
+    andConditions.length > 0 ? { $and: andConditions } : {}
 
   try {
     const [total, artworks] = await Promise.all([
