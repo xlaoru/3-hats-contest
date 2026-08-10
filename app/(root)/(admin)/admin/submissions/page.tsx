@@ -3,6 +3,7 @@ import { getArtworkFilterOptions, getArtworks } from "@/lib/actions/artwork.acti
 import { ArtworkStatus } from "@/lib/validations";
 import { notFound, redirect } from "next/navigation";
 import Overview from "./overview";
+import QuickActions from "./quick-actions";
 import Table from "./table";
 
 const PAGE_SIZE = 10
@@ -74,8 +75,9 @@ const Artworks = async (props: PageProps<"/admin/submissions">) => {
                         filterOptions={filterOptions}
                     />
                 </div>
-                <div className="w-[25%] min-w-0">
+                <div className="w-[25%] min-w-0 flex flex-col gap-6">
                     <Overview filterOptions={filterOptions} />
+                    <QuickActions filterOptions={filterOptions} />
                 </div>
             </div>
         </div>
