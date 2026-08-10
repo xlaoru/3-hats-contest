@@ -4,7 +4,7 @@ import Link from "next/link";
 const ArtworkCard = ({ artwork }: { artwork: PublicArtwork }) => {
     return (
         <Link
-            href={`/artworks/${artwork._id}`}
+            href={`/artworks/${artwork.slug}`}
             className="group bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
         >
             <div className="h-56 overflow-hidden bg-gray-100">

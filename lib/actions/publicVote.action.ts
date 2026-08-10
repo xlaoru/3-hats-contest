@@ -25,7 +25,7 @@ export async function requestPublicVote(
   const normalizedEmail = email.trim().toLowerCase()
 
   try {
-    const artwork = await Artwork.findOne({ _id: artworkId, isVerified: true })
+    const artwork = await Artwork.findOne({ _id: artworkId, status: 'approved' })
 
     if (!artwork) {
       throw new NotFoundError('Artwork')

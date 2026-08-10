@@ -3,7 +3,7 @@
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
 import Account from "@/database/account.model";
 import User from "@/database/user.model";
 
@@ -115,4 +115,8 @@ export async function signInWithCredentials(
   } catch (error) {
     return handleError(error) as ErrorResponse;
   }
+}
+
+export async function signOutAction() {
+  await signOut({ redirectTo: "/" });
 }

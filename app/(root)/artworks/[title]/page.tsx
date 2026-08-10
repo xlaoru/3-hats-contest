@@ -1,12 +1,14 @@
 import ArtworkImage from "@/components/artwork-image";
 import VoteForm from "@/components/vote-form";
-import { getPublicArtworkById } from "@/lib/actions/artwork.action";
+import { getPublicArtworkByTitleSlug } from "@/lib/actions/artwork.action";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-const ArtworkPage = async (props: PageProps<"/artworks/[id]">) => {
-    const { id } = await props.params;
-    const { success, data: artwork } = await getPublicArtworkById(id);
+const ArtworkPage = async (props: PageProps<"/artworks/[title]">) => {
+    const { title } = await props.params;
+    const { success, data: artwork } = await getPublicArtworkByTitleSlug(
+        decodeURIComponent(title)
+    );
 
     if (!success || !artwork) {
         return notFound();

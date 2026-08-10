@@ -21,7 +21,7 @@ const ArtworkDetails = ({
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
 
-    const handleVerify = (status: 'pending' | 'clarification' | 'approved' | 'published' | 'rejected' | 'withdrawn') => {
+    const handleVerify = (status: ArtworkStatus) => {
         startTransition(async () => {
             const result = await verifyArtwork({ ownerEmail, status });
 
@@ -39,7 +39,7 @@ const ArtworkDetails = ({
             <div className="flex items-start justify-between gap-4">
                 <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
                 <span
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 capitalize ${status === "approved" || status === "published"
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 capitalize ${status === "approved"
                         ? "bg-green-50 text-green-700"
                         : "bg-amber-50 text-amber-700"
                         }`}
@@ -70,20 +70,7 @@ const ArtworkDetails = ({
                     <span>✓</span>
                     {status === "approved" ? "Approved" : "Approve"}
                 </button>
-                <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => handleVerify("clarification")}
-                    className={`flex-1 inline-flex items-center justify-center gap-2 font-semibold py-2.5 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${status === "approved"
-                        ? "bg-green-500 hover:bg-green-600 active:bg-green-700 text-white"
-                        : "bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white"
-                        }`}
-                >
-                    <span>✓</span>
-                    {status === "clarification" ? "Requested Clarification" : "Request Clarification"}
-                </button>
             </div>
-
             {error && (
                 <p className="mt-3 text-sm text-red-600">{error}</p>
             )}

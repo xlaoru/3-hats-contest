@@ -4,7 +4,6 @@ export const ArtworkStatusEnum = z.enum([
   'pending',
   'clarification',
   'approved',
-  'published',
   'rejected',
   'withdrawn',
 ])

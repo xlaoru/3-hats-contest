@@ -13,6 +13,8 @@ export interface IArtwork {
   proveImage: string
   agreedToRules: boolean
   status: ArtworkStatus
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 export interface IArtworkDoc extends IArtwork, Document {}
