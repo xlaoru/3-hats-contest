@@ -342,6 +342,8 @@ export async function verifyArtwork(
 
     revalidatePath(`/admin/review/${artwork._id}`)
     revalidatePath('/admin')
+    revalidatePath('/artworks')
+    revalidatePath(`/artworks/${artwork._id}`)
 
     return { success: true, data: JSON.parse(JSON.stringify(artwork)) }
   } catch (error) {
@@ -379,6 +381,8 @@ export async function updateArtworkStatus(
 
     revalidatePath(`/admin/submissions/${artworkId}`)
     revalidatePath('/admin/submissions')
+    revalidatePath('/artworks')
+    revalidatePath(`/artworks/${artworkId}`)
 
     return { success: true, data: JSON.parse(JSON.stringify(artwork)) }
   } catch (error) {
