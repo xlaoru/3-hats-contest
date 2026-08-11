@@ -1,17 +1,12 @@
-import { fetchHandler } from "./handlers/fetch";
+import { fetchHandler } from './handlers/fetch'
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api'
 
 export const api = {
   auth: {
-    oAuthSignIn: ({
-      user,
-      provider,
-      providerAccountId,
-    }: SignInWithOAuthParams) =>
+    oAuthSignIn: ({ user, provider, providerAccountId }: SignInWithOAuthParams) =>
       fetchHandler(`${API_BASE_URL}/auth/sign-in-with-oauth`, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({
           user,
           provider,
@@ -21,17 +16,12 @@ export const api = {
   },
   users: {
     getById: (id: string) => fetchHandler(`${API_BASE_URL}/users/${id}`),
-    getByEmail: (email: string) =>
-      fetchHandler(`${API_BASE_URL}/users/${email}`, {
-        method: "POST",
-        body: JSON.stringify({ email }),
-      }),
   },
   accounts: {
     getByProvider: (providerAccountId: string) =>
       fetchHandler(`${API_BASE_URL}/accounts/provider`, {
-        method: "POST",
+        method: 'POST',
         body: JSON.stringify({ providerAccountId }),
       }),
   },
-};
+}

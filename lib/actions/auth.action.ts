@@ -1,122 +1,125 @@
-"use server";
+'use server'
 
-import bcrypt from "bcryptjs";
-import mongoose from "mongoose";
+import bcrypt from 'bcryptjs'
+import mongoose from 'mongoose'
 
-import { signIn, signOut } from "@/auth";
-import Account from "@/database/account.model";
-import User from "@/database/user.model";
+import { signIn, signOut } from '@/auth'
+import Account from '@/database/account.model'
+import User from '@/database/user.model'
 
-import handleError from "../handlers/error";
-import { SignInSchema, SignUpSchema } from "../validations";
-import { ActionResponse, ErrorResponse } from "@/types/global";
-import { NotFoundError } from "../http-errors";
-import action from "../handlers/action";
+import handleError from '../handlers/error'
+import { SignInSchema, SignUpSchema } from '../validations'
+import { ActionResponse, ErrorResponse } from '@/types/global'
+import { NotFoundError } from '../http-errors'
+import action from '../handlers/action'
 
-export async function signUpWithCredentials(
-  params: AuthCredentials
-): Promise<ActionResponse> {
-  const validationResult = await action({ params, schema: SignUpSchema });
+export async function signUpWithCredentials(params: AuthCredentials): Promise<ActionResponse> {
+  const validationResult = await action({ params, schema: SignUpSchema })
 
   if (validationResult instanceof Error) {
-    return handleError(validationResult) as ErrorResponse;
+    return handleError(validationResult) as ErrorResponse
   }
 
-  const { name, username, email, password } = validationResult.params!;
+  const { name, username, email, password } = validationResult.params!
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const session = await mongoose.startSession()
+  session.startTransaction()
 
   try {
-    const existingUser = await User.findOne({ email }).session(session);
+    const existingUser = await User.findOne({ email }).session(session)
 
     if (existingUser) {
-      throw new Error("User already exists");
+      throw new Error('User already exists')
     }
 
-    const existingUsername = await User.findOne({ username }).session(session);
+    const existingUsername = await User.findOne({ username }).session(session)
 
     if (existingUsername) {
-      throw new Error("Username already exists");
+      throw new Error('Username already exists')
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 12)
 
     const [newUser] = await User.create([{ username, name, email }], {
       session,
-    });
+    })
 
     await Account.create(
       [
         {
           userId: newUser._id,
           name,
-          provider: "credentials",
+          provider: 'credentials',
           providerAccountId: email,
           password: hashedPassword,
         },
       ],
-      { session }
-    );
+      { session },
+    )
 
-    await session.commitTransaction();
+    await session.commitTransaction()
 
-    await signIn("credentials", { email, password, redirect: false });
+    await signIn('credentials', { email, password, redirect: false })
 
-    return { success: true };
+    return { success: true }
   } catch (error) {
-    await session.abortTransaction();
+    await session.abortTransaction()
 
-    return handleError(error) as ErrorResponse;
+    return handleError(error) as ErrorResponse
   } finally {
-    await session.endSession();
+    await session.endSession()
   }
 }
 
 export async function signInWithCredentials(
-  params: Pick<AuthCredentials, "email" | "password">
+  params: Pick<AuthCredentials, 'email' | 'password'>,
 ): Promise<ActionResponse> {
-  const validationResult = await action({ params, schema: SignInSchema });
+  const validationResult = await action({ params, schema: SignInSchema })
 
   if (validationResult instanceof Error) {
-    return handleError(validationResult) as ErrorResponse;
+    return handleError(validationResult) as ErrorResponse
   }
 
-  const { email, password } = validationResult.params!;
+  const { email, password } = validationResult.params!
 
   try {
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email })
 
     if (!existingUser) {
-      throw new NotFoundError("User");
+      throw new NotFoundError('User')
     }
 
     const existingAccount = await Account.findOne({
-      provider: "credentials",
+      provider: 'credentials',
       providerAccountId: email,
-    });
+    })
 
     if (!existingAccount) {
-      throw new NotFoundError("Account");
+      throw new NotFoundError('Account')
     }
 
-    const passwordMatch = await bcrypt.compare(
-      password,
-      existingAccount.password
-    );
+    const passwordMatch = await bcrypt.compare(password, existingAccount.password)
 
     if (!passwordMatch) {
-      throw new Error("Password does not match");
+      throw new Error('Password does not match')
     }
 
-    await signIn("credentials", { email, password, redirect: false });
+    await signIn('credentials', { email, password, redirect: false })
 
-    return { success: true };
+    return { success: true }
   } catch (error) {
-    return handleError(error) as ErrorResponse;
+    return handleError(error) as ErrorResponse
   }
 }
 
 export async function signOutAction() {
-  await signOut({ redirectTo: "/" });
+  await signOut({ redirectTo: '/' })
+}
+
+export async function signInWithGithub() {
+  await signIn('github', { redirectTo: '/' })
+}
+
+export async function signInWithGoogle() {
+  await signIn('google', { redirectTo: '/' })
 }

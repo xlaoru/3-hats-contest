@@ -12,9 +12,7 @@ import { ConfirmPublicVoteSchema, RequestPublicVoteSchema } from '../validations
 
 const RESEND_COOLDOWN_MS = 60 * 1000
 
-export async function requestPublicVote(
-  params: RequestPublicVoteParams,
-): Promise<ActionResponse> {
+export async function requestPublicVote(params: RequestPublicVoteParams): Promise<ActionResponse> {
   const validationResult = await action({ params, schema: RequestPublicVoteSchema })
 
   if (validationResult instanceof Error) {

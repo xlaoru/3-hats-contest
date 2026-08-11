@@ -1,11 +1,9 @@
-import { Document, model, models, Schema, Types } from 'mongoose'
+import { model, models, Schema, Types } from 'mongoose'
 
 export interface IJudgeVote {
   judge: Types.ObjectId
   artwork: Types.ObjectId
 }
-
-export interface IJudgeVoteDoc extends IJudgeVote, Document {}
 
 const JudgeVoteSchema = new Schema<IJudgeVote>(
   {

@@ -163,9 +163,7 @@ export async function getArtworks(
   }
 }
 
-export async function getArtworkById(
-  artworkId: string,
-): Promise<ActionResponse<PopulatedArtwork>> {
+export async function getArtworkById(artworkId: string): Promise<ActionResponse<PopulatedArtwork>> {
   try {
     await dbConnect()
 
@@ -275,9 +273,7 @@ export async function getPublicArtworks(): Promise<ActionResponse<PublicArtwork[
   }
 }
 
-export async function getPublicArtworkById(
-  id: string,
-): Promise<ActionResponse<PublicArtwork>> {
+export async function getPublicArtworkById(id: string): Promise<ActionResponse<PublicArtwork>> {
   try {
     await dbConnect()
 

@@ -1,58 +1,39 @@
-import { confirmArtworkSubmission } from "@/lib/actions/artwork.action";
-import Link from "next/link";
+import StateCard from '@/components/state-card'
+import { confirmArtworkSubmission } from '@/lib/actions/artwork.action'
+
+const backProps = { backHref: '/artworks', backLabel: 'Back to gallery' }
 
 const ConfirmArtworkSubmissionPage = async ({
-    searchParams,
+  searchParams,
 }: {
-    searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string }>
 }) => {
-    const { token } = await searchParams;
+  const { token } = await searchParams
 
-    if (!token) {
-        return (
-            <StateCard title="Invalid link">
-                This confirmation link is missing its token.
-            </StateCard>
-        );
-    }
-
-    const result = await confirmArtworkSubmission({ token });
-
-    if (!result.success || !result.data) {
-        return (
-            <StateCard title="Couldn't confirm your entry">
-                {result.error?.message ?? "This link is invalid or has expired."}
-            </StateCard>
-        );
-    }
-
+  if (!token) {
     return (
-        <StateCard title="Entry confirmed 🎉">
-            Thanks — your entry <strong>{result.data.artworkTitle}</strong> is confirmed and now
-            waiting for admin approval.
-        </StateCard>
-    );
-};
+      <StateCard title="Invalid link" {...backProps}>
+        This confirmation link is missing its token.
+      </StateCard>
+    )
+  }
 
-const StateCard = ({
-    title,
-    children,
-}: {
-    title: string;
-    children: React.ReactNode;
-}) => (
-    <div className="min-h-screen bg-gray-100 px-6 py-10 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-md p-8 max-w-md w-full text-center">
-            <h1 className="text-xl font-bold text-gray-900 mb-2">{title}</h1>
-            <p className="text-sm text-gray-600">{children}</p>
-            <Link
-                href="/artworks"
-                className="inline-block mt-6 text-sm font-semibold text-blue-600 hover:text-blue-700"
-            >
-                ← Back to gallery
-            </Link>
-        </div>
-    </div>
-);
+  const result = await confirmArtworkSubmission({ token })
 
-export default ConfirmArtworkSubmissionPage;
+  if (!result.success || !result.data) {
+    return (
+      <StateCard title="Couldn't confirm your entry" {...backProps}>
+        {result.error?.message ?? 'This link is invalid or has expired.'}
+      </StateCard>
+    )
+  }
+
+  return (
+    <StateCard title="Entry confirmed 🎉" {...backProps}>
+      Thanks — your entry <strong>{result.data.artworkTitle}</strong> is confirmed and now waiting
+      for admin approval.
+    </StateCard>
+  )
+}
+
+export default ConfirmArtworkSubmissionPage

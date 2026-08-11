@@ -1,49 +1,43 @@
-"use server";
+'use server'
 
-import { ZodError, ZodSchema } from "zod";
-import { UnauthorizedError, ValidationError } from "../http-errors";
-import { Session } from "next-auth";
-import { auth } from "@/auth";
-import dbConnect from "../mongoose";
+import { ZodError, ZodSchema } from 'zod'
+import { UnauthorizedError, ValidationError } from '../http-errors'
+import { Session } from 'next-auth'
+import { auth } from '@/auth'
+import dbConnect from '../mongoose'
 
 type ActionOptions<T> = {
-  params?: T;
-  schema?: ZodSchema<T>;
-  authorize?: boolean;
-};
+  params?: T
+  schema?: ZodSchema<T>
+  authorize?: boolean
+}
 
-async function action<T>({
-  params,
-  schema,
-  authorize = false,
-}: ActionOptions<T>) {
+async function action<T>({ params, schema, authorize = false }: ActionOptions<T>) {
   if (schema && params) {
     try {
-      schema.parse(params);
+      schema.parse(params)
     } catch (error) {
       if (error instanceof ZodError) {
-        return new ValidationError(
-          error.flatten().fieldErrors as Record<string, string[]>
-        );
+        return new ValidationError(error.flatten().fieldErrors as Record<string, string[]>)
       } else {
-        return new Error("Schema validation failed");
+        return new Error('Schema validation failed')
       }
     }
   }
 
-  let session: Session | null = null;
+  let session: Session | null = null
 
   if (authorize) {
-    session = await auth();
+    session = await auth()
 
     if (!session) {
-      return new UnauthorizedError();
+      return new UnauthorizedError()
     }
   }
 
-  await dbConnect();
+  await dbConnect()
 
-  return { params, session };
+  return { params, session }
 }
 
-export default action;
+export default action

@@ -1,4 +1,4 @@
-import { Document, model, models, Schema, Types } from 'mongoose'
+import { model, models, Schema, Types } from 'mongoose'
 
 export interface IPublicVote {
   email: string
@@ -8,8 +8,6 @@ export interface IPublicVote {
   verifiedAt: Date | null
   updatedAt: Date
 }
-
-export interface IPublicVoteDoc extends IPublicVote, Document {}
 
 const PublicVoteSchema = new Schema<IPublicVote>(
   {
