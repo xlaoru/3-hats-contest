@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     Pagination,
@@ -18,6 +17,7 @@ import type { ArtworkFilterOptions, PopulatedArtwork } from "@/lib/actions/artwo
 import { ArtworkStatusEnum, type ArtworkStatus } from "@/lib/validations"
 import { ChevronDown, ChevronLeft, ChevronRight, Download, Search, SlidersHorizontal } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useRef, useState } from "react"
 
 const statusLabels: Record<ArtworkStatus, string> = {
     pending: "Pending review",
@@ -399,7 +399,7 @@ export default function Table({ artworks, total, isNext, page, pageSize, filterO
                     </thead>
                     <tbody>
                         {artworks.map((item) => (
-                            <tr onClick={() => router.push(`/admin/review/${item.slug}`)} key={item._id} className="border-b border-zinc-100 last:border-0 bg-white transition-colors hover:bg-zinc-200">
+                            <tr onClick={() => router.push(`/admin/submissions/${item._id}`)} key={item._id} className="border-b border-zinc-100 last:border-0 bg-white transition-colors hover:bg-zinc-200">
                                 <td className="px-6 py-4 align-top" onClick={(event) => event.stopPropagation()}>
                                     <input
                                         type="checkbox"
