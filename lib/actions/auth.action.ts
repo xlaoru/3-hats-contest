@@ -22,10 +22,12 @@ export async function signUpWithCredentials(params: AuthCredentials): Promise<Ac
 
   const { name, username, email, password } = validationResult.params!
 
-  const session = await mongoose.startSession()
-  session.startTransaction()
+  let session: mongoose.ClientSession | undefined
 
   try {
+    session = await mongoose.startSession()
+    session.startTransaction()
+
     const existingUser = await User.findOne({ email }).session(session)
 
     if (existingUser) {
@@ -63,11 +65,13 @@ export async function signUpWithCredentials(params: AuthCredentials): Promise<Ac
 
     return { success: true }
   } catch (error) {
-    await session.abortTransaction()
+    if (session?.inTransaction()) {
+      await session.abortTransaction()
+    }
 
     return handleError(error) as ErrorResponse
   } finally {
-    await session.endSession()
+    await session?.endSession()
   }
 }
 
