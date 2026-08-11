@@ -2,6 +2,12 @@ import { Document, model, models, Schema, Types } from 'mongoose'
 
 import { ArtworkStatusEnum, type ArtworkStatus } from '@/lib/validations'
 
+export interface IArtworkNote {
+  text: string
+  author: string
+  createdAt: Date
+}
+
 export interface IArtwork {
   participant: Types.ObjectId
   title: string
@@ -13,6 +19,7 @@ export interface IArtwork {
   proveImage: string
   agreedToRules: boolean
   status: ArtworkStatus
+  notes: IArtworkNote[]
   createdAt?: Date
   updatedAt?: Date
 }
@@ -35,6 +42,17 @@ const ArtworkSchema = new Schema<IArtwork>(
       enum: ArtworkStatusEnum.options,
       required: true,
       default: 'pending',
+    },
+    notes: {
+      type: [
+        {
+          text: { type: String, required: true },
+          author: { type: String, required: true },
+          createdAt: { type: Date, required: true, default: Date.now },
+        },
+      ],
+      default: [],
+      _id: false,
     },
   },
   { timestamps: true },

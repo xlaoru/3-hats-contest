@@ -14,26 +14,11 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import type { ArtworkFilterOptions, PopulatedArtwork } from "@/lib/actions/artwork.action"
+import { statusLabels, statusStyles } from "@/lib/artwork-status"
 import { ArtworkStatusEnum, type ArtworkStatus } from "@/lib/validations"
 import { ChevronDown, ChevronLeft, ChevronRight, Download, Search, SlidersHorizontal } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from "react"
-
-const statusLabels: Record<ArtworkStatus, string> = {
-    pending: "Pending review",
-    clarification: "Clarification required",
-    approved: "Approved",
-    rejected: "Rejected",
-    withdrawn: "Withdrawn",
-}
-
-const statusStyles: Record<ArtworkStatus, string> = {
-    pending: "bg-amber-100 text-amber-700",
-    clarification: "bg-violet-100 text-violet-700",
-    approved: "bg-emerald-100 text-emerald-700",
-    rejected: "bg-red-100 text-red-700",
-    withdrawn: "bg-zinc-200 text-zinc-600",
-}
 
 const SEARCH_DEBOUNCE_MS = 400
 

@@ -14,12 +14,14 @@ import dbConnect from '../mongoose'
 import { createSubmissionVerificationToken, hashToken } from '../tokens'
 import { escapeRegExp } from '../utils'
 import {
+  AddArtworkNoteSchema,
   ArtworkStatus,
   ArtworkStatusEnum,
   ConfirmArtworkSubmissionSchema,
   GetArtworksSchema,
   LikeArtworkSchema,
   SubmitArtworkSchema,
+  UpdateArtworkStatusSchema,
   VerifyArtworkSchema,
 } from '../validations'
 
@@ -27,7 +29,7 @@ const SUBMISSION_RESEND_COOLDOWN_MS = 60 * 1000
 
 async function upsertArtworkForParticipant(
   participantId: mongoose.Types.ObjectId,
-  data: Omit<IArtwork, 'participant' | 'status'>,
+  data: Omit<IArtwork, 'participant' | 'status' | 'notes'>,
   existingArtwork: IArtworkDoc | null,
   session: mongoose.ClientSession,
 ): Promise<IArtworkDoc> {
@@ -156,6 +158,31 @@ export async function getArtworks(
     }
 
     return { success: true, data: JSON.parse(JSON.stringify(data)) }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
+  }
+}
+
+export async function getArtworkById(
+  artworkId: string,
+): Promise<ActionResponse<PopulatedArtwork>> {
+  try {
+    await dbConnect()
+
+    const artwork = await Artwork.findById(artworkId).populate<{
+      participant: IParticipantDoc
+    }>('participant')
+
+    if (!artwork) {
+      throw new NotFoundError('Artwork')
+    }
+
+    const judgeLikes = await JudgeVote.countDocuments({ artwork: artwork._id })
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify({ ...artwork.toObject(), judgeLikes })),
+    }
   } catch (error) {
     return handleError(error) as ErrorResponse
   }
@@ -326,6 +353,74 @@ export async function verifyArtwork(
     return handleError(error) as ErrorResponse
   } finally {
     await session.endSession()
+  }
+}
+
+export async function updateArtworkStatus(
+  params: UpdateArtworkStatusParams,
+): Promise<ActionResponse<IArtworkDoc>> {
+  const validationResult = await action({
+    params,
+    schema: UpdateArtworkStatusSchema,
+    authorize: true,
+  })
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse
+  }
+
+  const { artworkId, status } = validationResult.params!
+
+  try {
+    const artwork = await Artwork.findById(artworkId)
+
+    if (!artwork) {
+      throw new NotFoundError('Artwork')
+    }
+
+    artwork.status = status
+    await artwork.save()
+
+    revalidatePath(`/admin/submissions/${artworkId}`)
+    revalidatePath('/admin/submissions')
+
+    return { success: true, data: JSON.parse(JSON.stringify(artwork)) }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
+  }
+}
+
+export async function addArtworkNote(
+  params: AddArtworkNoteParams,
+): Promise<ActionResponse<IArtworkDoc>> {
+  const validationResult = await action({
+    params,
+    schema: AddArtworkNoteSchema,
+    authorize: true,
+  })
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse
+  }
+
+  const { artworkId, text } = validationResult.params!
+  const author = validationResult.session!.user?.name ?? 'Admin'
+
+  try {
+    const artwork = await Artwork.findById(artworkId)
+
+    if (!artwork) {
+      throw new NotFoundError('Artwork')
+    }
+
+    artwork.notes.push({ text, author, createdAt: new Date() })
+    await artwork.save()
+
+    revalidatePath(`/admin/submissions/${artworkId}`)
+
+    return { success: true, data: JSON.parse(JSON.stringify(artwork)) }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
   }
 }
 

@@ -25,6 +25,16 @@ interface LikeArtworkParams {
   ownerEmail: string
 }
 
+interface AddArtworkNoteParams {
+  artworkId: string
+  text: string
+}
+
+interface UpdateArtworkStatusParams {
+  artworkId: string
+  status: import('@/lib/validations').ArtworkStatus
+}
+
 interface RequestPublicVoteParams {
   artworkId: string
   email: string
