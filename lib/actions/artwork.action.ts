@@ -1,6 +1,5 @@
 'use server'
 
-import { auth } from '@/auth'
 import Artwork, { IArtwork, IArtworkDoc } from '@/database/artwork.model'
 import JudgeVote from '@/database/judgeVote.model'
 import Participant, { IParticipantDoc } from '@/database/participant.model'
@@ -13,7 +12,7 @@ import handleError from '../handlers/error'
 import { ForbiddenError, NotFoundError } from '../http-errors'
 import dbConnect from '../mongoose'
 import { createSubmissionVerificationToken, hashToken } from '../tokens'
-import { buildSlugMap, escapeRegExp } from '../utils'
+import { escapeRegExp } from '../utils'
 import {
   ArtworkStatus,
   ArtworkStatusEnum,
@@ -47,7 +46,6 @@ export type PopulatedArtwork = Omit<IArtworkDoc, 'participant' | '_id'> & {
   participant: IParticipantDoc
   judgeLikes: number
   hasVoted?: boolean
-  slug: string
 }
 
 async function getJudgeLikesCounts(
@@ -148,22 +146,10 @@ export async function getArtworks(
 
     const judgeLikesCounts = await getJudgeLikesCounts(artworks.map((artwork) => artwork._id))
 
-    // Slugs must stay unique across the whole collection (they're used as review-page
-    // URLs), so disambiguation runs over every artwork, not just the current page.
-    const siblingTitles = await Artwork.find({}, 'title createdAt').lean()
-    const slugMap = buildSlugMap(
-      siblingTitles.map((item) => ({
-        _id: item._id.toString(),
-        title: item.title,
-        createdAt: item.createdAt,
-      })),
-    )
-
     const data: PaginatedArtworks = {
       artworks: artworks.map((artwork) => ({
         ...artwork.toObject(),
         judgeLikes: judgeLikesCounts.get(artwork._id.toString()) ?? 0,
-        slug: slugMap.get(artwork._id.toString())!,
       })),
       isNext: total > skip + artworks.length,
       total,
@@ -233,7 +219,6 @@ export type PublicArtwork = {
   medium: string
   artworkSize: string
   artworkImage: string
-  slug: string
   participant: { name: string; state: string }
 }
 
@@ -245,21 +230,12 @@ export async function getPublicArtworks(): Promise<ActionResponse<PublicArtwork[
       .sort({ createdAt: -1 })
       .populate<{ participant: IParticipantDoc }>('participant', 'name state')
 
-    const slugMap = buildSlugMap(
-      artworks.map((artwork) => ({
-        _id: artwork._id.toString(),
-        title: artwork.title,
-        createdAt: artwork.createdAt,
-      })),
-    )
-
     const data: PublicArtwork[] = artworks.map((artwork) => ({
       _id: artwork._id.toString(),
       title: artwork.title,
       medium: artwork.medium,
       artworkSize: artwork.artworkSize,
       artworkImage: artwork.artworkImage,
-      slug: slugMap.get(artwork._id.toString())!,
       participant: {
         name: artwork.participant.name,
         state: artwork.participant.state,
@@ -272,25 +248,15 @@ export async function getPublicArtworks(): Promise<ActionResponse<PublicArtwork[
   }
 }
 
-export async function getPublicArtworkByTitleSlug(
-  titleSlug: string,
+export async function getPublicArtworkById(
+  id: string,
 ): Promise<ActionResponse<PublicArtwork>> {
   try {
     await dbConnect()
 
-    const artworks = await Artwork.find({ status: 'approved' }).populate<{
+    const artwork = await Artwork.findOne({ _id: id, status: 'approved' }).populate<{
       participant: IParticipantDoc
     }>('participant', 'name state')
-
-    const slugMap = buildSlugMap(
-      artworks.map((item) => ({
-        _id: item._id.toString(),
-        title: item.title,
-        createdAt: item.createdAt,
-      })),
-    )
-
-    const artwork = artworks.find((item) => slugMap.get(item._id.toString()) === titleSlug)
 
     if (!artwork) {
       throw new NotFoundError('Artwork')
@@ -302,7 +268,6 @@ export async function getPublicArtworkByTitleSlug(
       medium: artwork.medium,
       artworkSize: artwork.artworkSize,
       artworkImage: artwork.artworkImage,
-      slug: titleSlug,
       participant: {
         name: artwork.participant.name,
         state: artwork.participant.state,
@@ -310,53 +275,6 @@ export async function getPublicArtworkByTitleSlug(
     }
 
     return { success: true, data: JSON.parse(JSON.stringify(data)) }
-  } catch (error) {
-    return handleError(error) as ErrorResponse
-  }
-}
-
-export async function getArtworkByTitleSlug(
-  titleSlug: string,
-): Promise<ActionResponse<PopulatedArtwork>> {
-  try {
-    await dbConnect()
-
-    const artworks = await Artwork.find().populate<{ participant: IParticipantDoc }>('participant')
-
-    const slugMap = buildSlugMap(
-      artworks.map((item) => ({
-        _id: item._id.toString(),
-        title: item.title,
-        createdAt: item.createdAt,
-      })),
-    )
-
-    const artwork = artworks.find((item) => slugMap.get(item._id.toString()) === titleSlug)
-
-    if (!artwork) {
-      throw new NotFoundError('Artwork')
-    }
-
-    const session = await auth()
-
-    const [judgeLikes, hasVoted] = await Promise.all([
-      JudgeVote.countDocuments({ artwork: artwork._id }),
-      session?.user?.id
-        ? JudgeVote.exists({ judge: session.user.id, artwork: artwork._id })
-        : Promise.resolve(false),
-    ])
-
-    return {
-      success: true,
-      data: JSON.parse(
-        JSON.stringify({
-          ...artwork.toObject(),
-          judgeLikes,
-          hasVoted: Boolean(hasVoted),
-          slug: titleSlug,
-        }),
-      ),
-    }
   } catch (error) {
     return handleError(error) as ErrorResponse
   }
@@ -399,19 +317,7 @@ export async function verifyArtwork(
 
     await session.commitTransaction()
 
-    const siblingTitles = await Artwork.find({}, 'title createdAt').lean()
-    const slugMap = buildSlugMap(
-      siblingTitles.map((item) => ({
-        _id: item._id.toString(),
-        title: item.title,
-        createdAt: item.createdAt,
-      })),
-    )
-    const slug = slugMap.get(artwork._id.toString())
-
-    if (slug) {
-      revalidatePath(`/admin/review/${slug}`)
-    }
+    revalidatePath(`/admin/review/${artwork._id}`)
     revalidatePath('/admin')
 
     return { success: true, data: JSON.parse(JSON.stringify(artwork)) }
