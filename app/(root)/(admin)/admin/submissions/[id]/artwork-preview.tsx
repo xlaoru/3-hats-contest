@@ -64,7 +64,7 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
                         href={activeSrc}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50"
+                        className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 bg-white hover:bg-zinc-50"
                     >
                         Open in new tab
                         <ExternalLink size={14} />
@@ -87,8 +87,7 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
                     </Popover>
                 </div>
             </div>
-
-            <div className="flex items-center justify-center bg-zinc-50 min-h-[360px] overflow-hidden p-6">
+            <div className="flex items-center justify-center min-h-[360px] overflow-hidden p-6">
                 <img
                     src={activeSrc}
                     alt={title}
@@ -96,7 +95,6 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
                     style={{ transform: `scale(${zoom / 100}) rotate(${rotation}deg)` }}
                 />
             </div>
-
             <div className="flex items-center justify-center gap-3 py-3 border-b border-zinc-200">
                 <button
                     type="button"
