@@ -18,9 +18,11 @@ import {
   ArtworkStatus,
   ArtworkStatusEnum,
   ConfirmArtworkSubmissionSchema,
+  DeleteArtworkNoteSchema,
   GetArtworksSchema,
   LikeArtworkSchema,
   SubmitArtworkSchema,
+  UpdateArtworkNoteSchema,
   UpdateArtworkStatusSchema,
   VerifyArtworkSchema,
 } from '../validations'
@@ -414,6 +416,82 @@ export async function addArtworkNote(
     }
 
     artwork.notes.push({ text, author, createdAt: new Date() })
+    await artwork.save()
+
+    revalidatePath(`/admin/submissions/${artworkId}`)
+
+    return { success: true, data: JSON.parse(JSON.stringify(artwork)) }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
+  }
+}
+
+export async function updateArtworkNote(
+  params: UpdateArtworkNoteParams,
+): Promise<ActionResponse<IArtworkDoc>> {
+  const validationResult = await action({
+    params,
+    schema: UpdateArtworkNoteSchema,
+    authorize: true,
+  })
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse
+  }
+
+  const { artworkId, noteIndex, text } = validationResult.params!
+
+  try {
+    const artwork = await Artwork.findById(artworkId)
+
+    if (!artwork) {
+      throw new NotFoundError('Artwork')
+    }
+
+    const note = artwork.notes[noteIndex]
+
+    if (!note) {
+      throw new NotFoundError('Note')
+    }
+
+    note.text = text
+    await artwork.save()
+
+    revalidatePath(`/admin/submissions/${artworkId}`)
+
+    return { success: true, data: JSON.parse(JSON.stringify(artwork)) }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
+  }
+}
+
+export async function deleteArtworkNote(
+  params: DeleteArtworkNoteParams,
+): Promise<ActionResponse<IArtworkDoc>> {
+  const validationResult = await action({
+    params,
+    schema: DeleteArtworkNoteSchema,
+    authorize: true,
+  })
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse
+  }
+
+  const { artworkId, noteIndex } = validationResult.params!
+
+  try {
+    const artwork = await Artwork.findById(artworkId)
+
+    if (!artwork) {
+      throw new NotFoundError('Artwork')
+    }
+
+    if (!artwork.notes[noteIndex]) {
+      throw new NotFoundError('Note')
+    }
+
+    artwork.notes.splice(noteIndex, 1)
     await artwork.save()
 
     revalidatePath(`/admin/submissions/${artworkId}`)

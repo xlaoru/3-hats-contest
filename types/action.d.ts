@@ -30,6 +30,17 @@ interface AddArtworkNoteParams {
   text: string
 }
 
+interface UpdateArtworkNoteParams {
+  artworkId: string
+  noteIndex: number
+  text: string
+}
+
+interface DeleteArtworkNoteParams {
+  artworkId: string
+  noteIndex: number
+}
+
 interface UpdateArtworkStatusParams {
   artworkId: string
   status: import('@/lib/validations').ArtworkStatus

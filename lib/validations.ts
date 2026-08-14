@@ -119,6 +119,17 @@ export const AddArtworkNoteSchema = z.object({
   text: z.string().min(1, { message: 'Note text is required.' }).max(2000),
 })
 
+export const UpdateArtworkNoteSchema = z.object({
+  artworkId: z.string().min(1, { message: 'Artwork is required.' }),
+  noteIndex: z.number().int().min(0),
+  text: z.string().min(1, { message: 'Note text is required.' }).max(2000),
+})
+
+export const DeleteArtworkNoteSchema = z.object({
+  artworkId: z.string().min(1, { message: 'Artwork is required.' }),
+  noteIndex: z.number().int().min(0),
+})
+
 export const ConfirmArtworkSubmissionSchema = z.object({
   token: z.string().min(1, { message: 'Token is required.' }),
 })
