@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button'
 import { CompetitionDateItem, updateCompetitionDate } from '@/lib/actions/competitionDate.action'
 import { cn } from '@/lib/utils'
-import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState, useTransition } from 'react'
 
 type SettingsFormProps = {
@@ -28,9 +27,18 @@ const fieldConfigs: FieldConfig[] = [
 
 type FormValues = Record<FieldName, string>
 
+const MIN_YEAR = 2000
+const MAX_YEAR = 2100
+const inputBounds = {
+  'datetime-local': { min: `${MIN_YEAR}-01-01T00:00`, max: `${MAX_YEAR}-12-31T23:59` },
+  date: { min: `${MIN_YEAR}-01-01`, max: `${MAX_YEAR}-12-31` },
+} as const
+
 function toInputValue(value: Date | string, type: 'datetime-local' | 'date'): string {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
+  const year = date.getFullYear()
+  if (year < MIN_YEAR || year > MAX_YEAR) return ''
   const iso = date.toISOString()
   return type === 'datetime-local' ? iso.slice(0, 16) : iso.slice(0, 10)
 }
@@ -51,7 +59,7 @@ function buildInitialValues(dates: CompetitionDateItem[]): { ids: Partial<Record
 const rowClass = 'flex flex-col gap-3 py-5 first:pt-0 last:pb-0 border-b border-zinc-100 last:border-b-0 sm:flex-row sm:items-center sm:justify-between'
 
 const inputClass =
-  'w-full appearance-none rounded-lg border border-zinc-300 bg-white px-3 py-2 pr-9 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 disabled:opacity-50'
+  'w-full min-w-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-400 disabled:opacity-50'
 
 function DateField({
   value,
@@ -64,20 +72,18 @@ function DateField({
   type: 'datetime-local' | 'date'
   disabled?: boolean
 }) {
+  const bounds = inputBounds[type]
+
   return (
-    <div className="relative">
-      <input
-        type={type}
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-        className={inputClass}
-      />
-      <CalendarIcon
-        size={16}
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
-      />
-    </div>
+    <input
+      type={type}
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+      min={bounds.min}
+      max={bounds.max}
+      className={inputClass}
+    />
   )
 }
 
@@ -107,6 +113,16 @@ export default function SettingsForm({ dates }: SettingsFormProps) {
 
     if (changed.length === 0) return
 
+    const invalidField = changed.find((field) => {
+      const year = new Date(values[field.name]).getFullYear()
+      return year < MIN_YEAR || year > MAX_YEAR
+    })
+
+    if (invalidField) {
+      setError(`Enter a valid year (${MIN_YEAR}–${MAX_YEAR}) for "${invalidField.sourceName}".`)
+      return
+    }
+
     startTransition(async () => {
       const results = await Promise.all(
         changed.map((field) => {
@@ -127,7 +143,7 @@ export default function SettingsForm({ dates }: SettingsFormProps) {
 
   return (
     <div className="w-full max-w-3xl rounded-xl border border-zinc-200 bg-white shadow-sm">
-      <div className="flex flex-col px-6 py-2">
+      <div className="flex flex-col p-6">
         <div className={rowClass}>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-semibold text-zinc-900">Entries open</p>
@@ -164,19 +180,23 @@ export default function SettingsForm({ dates }: SettingsFormProps) {
             <p className="text-sm text-zinc-500">Voting period for People&apos;s Choice award.</p>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-64 shrink-0">
-            <DateField
-              type="date"
-              value={values.votingStart}
-              onChange={(v) => update('votingStart', v)}
-              disabled={isPending}
-            />
+            <div className="min-w-0 flex-1">
+              <DateField
+                type="date"
+                value={values.votingStart}
+                onChange={(v) => update('votingStart', v)}
+                disabled={isPending}
+              />
+            </div>
             <span className="shrink-0 text-zinc-400">–</span>
-            <DateField
-              type="date"
-              value={values.votingEnd}
-              onChange={(v) => update('votingEnd', v)}
-              disabled={isPending}
-            />
+            <div className="min-w-0 flex-1">
+              <DateField
+                type="date"
+                value={values.votingEnd}
+                onChange={(v) => update('votingEnd', v)}
+                disabled={isPending}
+              />
+            </div>
           </div>
         </div>
 
