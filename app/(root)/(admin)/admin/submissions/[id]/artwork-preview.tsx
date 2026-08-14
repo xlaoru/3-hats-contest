@@ -58,7 +58,7 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
             <ExternalLink size={14} />
           </a>
           <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-            <PopoverTrigger className="flex items-center justify-center rounded-lg border border-zinc-200 p-2 text-zinc-700 hover:bg-zinc-50">
+            <PopoverTrigger className="cursor-pointer flex items-center justify-center rounded-lg border border-zinc-200 p-2 text-zinc-700 hover:bg-zinc-50">
               <MoreHorizontal size={16} />
             </PopoverTrigger>
             <PopoverContent align="end" className="w-48 p-1.5">
@@ -91,7 +91,7 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
           aria-label="Zoom out"
           className="text-zinc-500 hover:text-zinc-900 disabled:opacity-40 disabled:hover:text-zinc-500"
         >
-          <ZoomOut size={18} />
+          <ZoomOut size={18} className="cursor-pointer" />
         </button>
         <span className="w-12 text-center text-sm text-zinc-700">{zoom}%</span>
         <button
@@ -101,7 +101,7 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
           aria-label="Zoom in"
           className="text-zinc-500 hover:text-zinc-900 disabled:opacity-40 disabled:hover:text-zinc-500"
         >
-          <ZoomIn size={18} />
+          <ZoomIn size={18} className="cursor-pointer" />
         </button>
         <span className="h-4 w-px bg-zinc-200" />
         <button
@@ -110,7 +110,7 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
           aria-label="Expand"
           className="text-zinc-500 hover:text-zinc-900"
         >
-          <Maximize2 size={18} />
+          <Maximize2 size={18} className="cursor-pointer" />
         </button>
         <button
           type="button"
@@ -118,69 +118,61 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
           aria-label="Rotate"
           className="text-zinc-500 hover:text-zinc-900"
         >
-          <RotateCw size={18} />
+          <RotateCw size={18} className="cursor-pointer" />
         </button>
       </div>
-
       <div className="flex border-b border-zinc-200">
         <button
           type="button"
           onClick={() => handleTabChange('artwork')}
-          className={`flex-1 px-4 py-2.5 text-sm text-center border-b-2 -mb-px transition-colors ${
-            activeTab === 'artwork'
-              ? 'border-zinc-900 font-semibold text-zinc-900'
-              : 'border-transparent text-zinc-500 hover:text-zinc-700'
-          }`}
+          className={`cursor-pointer flex-1 px-4 py-2.5 text-sm text-center border-b-2 -mb-px transition-colors ${activeTab === 'artwork'
+            ? 'border-zinc-900 font-semibold text-zinc-900'
+            : 'border-transparent text-zinc-500 hover:text-zinc-700'
+            }`}
         >
           Artwork preview
         </button>
         <button
           type="button"
           onClick={() => handleTabChange('proof')}
-          className={`flex-1 px-4 py-2.5 text-sm text-center border-b-2 -mb-px transition-colors ${
-            activeTab === 'proof'
-              ? 'border-zinc-900 font-semibold text-zinc-900'
-              : 'border-transparent text-zinc-500 hover:text-zinc-700'
-          }`}
+          className={`cursor-pointer flex-1 px-4 py-2.5 text-sm text-center border-b-2 -mb-px transition-colors ${activeTab === 'proof'
+            ? 'border-zinc-900 font-semibold text-zinc-900'
+            : 'border-transparent text-zinc-500 hover:text-zinc-700'
+            }`}
         >
           Proof photo
         </button>
       </div>
-
       <div className="grid grid-cols-2 gap-3 p-4">
         <button
           type="button"
           onClick={() => handleTabChange('artwork')}
-          className={`rounded-lg overflow-hidden border-2 ${
-            activeTab === 'artwork' ? 'border-zinc-900' : 'border-transparent'
-          }`}
+          className={`size-70 rounded-lg overflow-hidden border-2 ${activeTab === 'artwork' ? 'border-zinc-900' : 'border-transparent'
+            }`}
         >
           <img
             src={artworkImage}
             alt={`${title} artwork preview`}
-            className="h-28 w-full object-cover bg-zinc-100"
+            className="size-70 object-cover bg-zinc-100"
           />
         </button>
         <button
           type="button"
           onClick={() => handleTabChange('proof')}
-          className={`rounded-lg overflow-hidden border-2 ${
-            activeTab === 'proof' ? 'border-zinc-900' : 'border-transparent'
-          }`}
+          className={`size-70 rounded-lg overflow-hidden border-2 ${activeTab === 'proof' ? 'border-zinc-900' : 'border-transparent'
+            }`}
         >
           <img
             src={proveImage}
             alt={`${title} proof photo`}
-            className="h-28 w-full object-cover bg-zinc-100"
+            className="size-70 w-full object-cover bg-zinc-100"
           />
         </button>
       </div>
-
       <p className="flex items-center gap-1.5 px-4 pb-4 text-xs text-zinc-500">
         <Lock size={12} />
         The proof photo is only visible to administrators and judges.
       </p>
-
       {isFullscreen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-6"

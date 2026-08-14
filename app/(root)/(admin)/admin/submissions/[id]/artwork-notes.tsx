@@ -1,7 +1,6 @@
 'use client'
 
 import { addArtworkNote } from '@/lib/actions/artwork.action'
-import { PencilLine } from 'lucide-react'
 import { useState, useTransition } from 'react'
 
 type ArtworkNote = {
@@ -54,9 +53,7 @@ export default function ArtworkNotes({ artworkId, notes: initialNotes }: Artwork
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-md font-bold text-zinc-900 flex items-center gap-2">
-        Internal review notes <PencilLine size={12} />
       </h3>
-
       {notes.length > 0 && (
         <div className="flex flex-col gap-2">
           {[...notes].reverse().map((note, index) => (
@@ -69,7 +66,6 @@ export default function ArtworkNotes({ artworkId, notes: initialNotes }: Artwork
           ))}
         </div>
       )}
-
       <div className="flex flex-col gap-2">
         <textarea
           value={text}

@@ -19,22 +19,22 @@ const actions: {
   icon: React.ReactNode
   primary?: boolean
 }[] = [
-  {
-    status: 'approved',
-    label: 'Approve & Publish',
-    pendingLabel: 'Approving...',
-    icon: <Check />,
-    primary: true,
-  },
-  {
-    status: 'clarification',
-    label: 'Request Clarification',
-    pendingLabel: 'Requesting...',
-    icon: <CircleQuestionMark />,
-  },
-  { status: 'rejected', label: 'Reject', pendingLabel: 'Rejecting...', icon: <X /> },
-  { status: 'withdrawn', label: 'Withdraw', pendingLabel: 'Withdrawing...', icon: <CircleMinus /> },
-]
+    {
+      status: 'approved',
+      label: 'Approve & Publish',
+      pendingLabel: 'Approving...',
+      icon: <Check />,
+      primary: true,
+    },
+    {
+      status: 'clarification',
+      label: 'Request Clarification',
+      pendingLabel: 'Requesting...',
+      icon: <CircleQuestionMark />,
+    },
+    { status: 'rejected', label: 'Reject', pendingLabel: 'Rejecting...', icon: <X /> },
+    { status: 'withdrawn', label: 'Withdraw', pendingLabel: 'Withdrawing...', icon: <CircleMinus /> },
+  ]
 
 export default function ArtworkActions({ artworkId, status }: ArtworkActionsProps) {
   const router = useRouter()
@@ -65,7 +65,7 @@ export default function ArtworkActions({ artworkId, status }: ArtworkActionsProp
         {actions.map((action) => (
           <Button
             key={action.status}
-            className={`rounded-lg border border-zinc-200 px-3 py-2 text-sm ${action.primary ? '' : 'text-zinc-700 bg-white'}`}
+            className={`cursor-pointer rounded-lg border border-zinc-200 px-3 py-2 text-sm ${action.primary ? '' : 'text-zinc-700 bg-white'}`}
             variant={action.primary ? undefined : 'secondary'}
             disabled={isPending || status === action.status}
             onClick={() => handleChange(action.status)}

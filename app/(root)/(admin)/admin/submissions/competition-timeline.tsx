@@ -206,7 +206,7 @@ export default function CompetitionTimeline({ dates }: CompetitionTimelineProps)
             aria-label={isEditMode ? 'Stop editing dates' : 'Edit dates'}
             className={`rounded p-1 transition-colors text-zinc-900`}
           >
-            {isEditMode ? <PenOff size={16} /> : <PencilLine size={16} />}
+            {isEditMode ? <PenOff size={16} className='cursor-pointer' /> : <PencilLine size={16} className='cursor-pointer' />}
           </button>
         </div>
         <ul className="flex flex-col">

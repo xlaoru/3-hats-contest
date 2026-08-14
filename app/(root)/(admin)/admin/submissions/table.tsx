@@ -127,6 +127,7 @@ function FilterForm({ options, initial, onApply, onClear }: FilterFormProps) {
               <Checkbox
                 checked={statuses.includes(status)}
                 onCheckedChange={() => setStatuses((prev) => toggleValue(prev, status))}
+                className="cursor-pointer"
               />
               {statusLabels[status]}
             </label>
@@ -162,6 +163,7 @@ function FilterForm({ options, initial, onApply, onClear }: FilterFormProps) {
               <Checkbox
                 checked={regions.includes(region)}
                 onCheckedChange={() => setRegions((prev) => toggleValue(prev, region))}
+                className="cursor-pointer"
               />
               {region}
             </label>
@@ -179,6 +181,7 @@ function FilterForm({ options, initial, onApply, onClear }: FilterFormProps) {
               <Checkbox
                 checked={mediums.includes(medium)}
                 onCheckedChange={() => setMediums((prev) => toggleValue(prev, medium))}
+                className="cursor-pointer"
               />
               {medium}
             </label>
@@ -186,13 +189,13 @@ function FilterForm({ options, initial, onApply, onClear }: FilterFormProps) {
         </div>
       </div>
       <div className="flex items-center justify-between border-t border-zinc-200 pt-3">
-        <button type="button" onClick={onClear} className="text-sm text-zinc-500">
+        <button type="button" onClick={onClear} className="text-sm text-zinc-500 cursor-pointer">
           Clear all
         </button>
         <button
           type="button"
           onClick={() => onApply({ statuses, regions, mediums, dateFrom, dateTo })}
-          className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white"
+          className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white cursor-pointer"
         >
           Apply filters
         </button>
@@ -328,11 +331,10 @@ export default function Table({
             key={tab.key}
             type="button"
             onClick={() => selectStatusTab(tab.key)}
-            className={`whitespace-nowrap border-b-2 py-4 text-sm transition-colors ${
-              activeStatusTab === tab.key
-                ? 'border-zinc-900 font-medium text-zinc-900'
-                : 'border-transparent text-zinc-500 hover:text-zinc-700'
-            }`}
+            className={`whitespace-nowrap cursor-pointer border-b-2 py-4 text-sm transition-colors ${activeStatusTab === tab.key
+              ? 'border-zinc-900 font-medium text-zinc-900'
+              : 'border-transparent text-zinc-500 hover:text-zinc-700'
+              }`}
           >
             {tab.label} <span className="text-zinc-400">{tab.count}</span>
           </button>
@@ -347,7 +349,7 @@ export default function Table({
         />
         <div className="flex shrink-0 items-center gap-3">
           <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <PopoverTrigger className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700">
+            <PopoverTrigger className="cursor-pointer flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700">
               <SlidersHorizontal className="size-4" />
               Filters
               {activeFilterCount > 0 && (
@@ -372,7 +374,7 @@ export default function Table({
               />
             </PopoverContent>
           </Popover>
-          <button className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700">
+          <button className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 cursor-pointer">
             <Download className="size-4" />
             Export
           </button>
@@ -410,7 +412,7 @@ export default function Table({
               <tr
                 onClick={() => router.push(`/admin/submissions/${item._id}`)}
                 key={item._id}
-                className="border-b border-zinc-100 last:border-0 bg-white transition-colors hover:bg-zinc-200"
+                className="cursor-pointer border-b border-zinc-100 last:border-0 bg-white transition-colors hover:bg-zinc-200"
               >
                 <td className="px-6 py-4 align-top" onClick={(event) => event.stopPropagation()}>
                   <input
