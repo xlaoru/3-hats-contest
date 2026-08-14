@@ -9,7 +9,7 @@ import { revalidatePath } from 'next/cache'
 import { sendSubmissionVerificationEmail } from '../emails/submission-verification'
 import action from '../handlers/action'
 import handleError from '../handlers/error'
-import { ForbiddenError, NotFoundError } from '../http-errors'
+import { ForbiddenError, NotFoundError, ValidationError } from '../http-errors'
 import dbConnect from '../mongoose'
 import { createSubmissionVerificationToken, hashToken } from '../tokens'
 import { escapeRegExp } from '../utils'
@@ -22,6 +22,7 @@ import {
   GetArtworksSchema,
   LikeArtworkSchema,
   SubmitArtworkSchema,
+  UpdateArtworkDetailsSchema,
   UpdateArtworkNoteSchema,
   UpdateArtworkStatusSchema,
   VerifyArtworkSchema,
@@ -387,6 +388,78 @@ export async function updateArtworkStatus(
     revalidatePath(`/artworks/${artworkId}`)
 
     return { success: true, data: JSON.parse(JSON.stringify(artwork)) }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
+  }
+}
+
+export async function updateArtworkDetails(
+  params: UpdateArtworkDetailsParams,
+): Promise<ActionResponse<PopulatedArtwork>> {
+  const validationResult = await action({
+    params,
+    schema: UpdateArtworkDetailsSchema,
+    authorize: true,
+  })
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse
+  }
+
+  const {
+    artworkId,
+    name,
+    email,
+    state,
+    title,
+    medium,
+    artworkSize,
+    venue,
+    dateCreated,
+    artworkImage,
+    proveImage,
+  } = validationResult.params!
+
+  try {
+    const artwork = await Artwork.findById(artworkId)
+
+    if (!artwork) {
+      throw new NotFoundError('Artwork')
+    }
+
+    const participant = await Participant.findById(artwork.participant)
+
+    if (!participant) {
+      throw new NotFoundError('Participant')
+    }
+
+    if (email !== participant.email) {
+      const emailTaken = await Participant.findOne({ email, _id: { $ne: participant._id } })
+
+      if (emailTaken) {
+        throw new ValidationError({ email: ['This email is already used by another participant.'] })
+      }
+    }
+
+    participant.set({ name, email, state })
+    await participant.save()
+
+    artwork.set({ title, medium, artworkSize, venue, dateCreated, artworkImage, proveImage })
+    await artwork.save()
+
+    revalidatePath(`/admin/submissions/${artworkId}`)
+    revalidatePath('/admin/submissions')
+    revalidatePath('/artworks')
+    revalidatePath(`/artworks/${artworkId}`)
+
+    const judgeLikes = await JudgeVote.countDocuments({ artwork: artwork._id })
+
+    return {
+      success: true,
+      data: JSON.parse(
+        JSON.stringify({ ...artwork.toObject(), participant: participant.toObject(), judgeLikes }),
+      ),
+    }
   } catch (error) {
     return handleError(error) as ErrorResponse
   }

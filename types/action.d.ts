@@ -46,6 +46,20 @@ interface UpdateArtworkStatusParams {
   status: import('@/lib/validations').ArtworkStatus
 }
 
+interface UpdateArtworkDetailsParams {
+  artworkId: string
+  name: string
+  email: string
+  state: string
+  title: string
+  medium: string
+  artworkSize: string
+  venue: string
+  dateCreated: Date
+  artworkImage: string
+  proveImage: string
+}
+
 interface RequestPublicVoteParams {
   artworkId: string
   email: string

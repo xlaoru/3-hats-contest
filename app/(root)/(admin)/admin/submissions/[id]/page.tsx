@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 import ArtworkActions from './artwork-actions'
 import ArtworkNotes from './artwork-notes'
 import ArtworkPreview from './artwork-preview'
+import EditArtworkModal from './edit-artwork-modal'
 
 const submittedAtFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -48,7 +49,22 @@ const ArtworkPage = async (props: PageProps<'/admin/submissions/[id]'>) => {
             <ArtworkActions artworkId={artwork._id} status={artwork.status} />
           </div>
           <div className="flex flex-col gap-4 py-4 border-b border-zinc-300">
-            <h3 className="text-md font-bold text-zinc-900">Applicant & Artwork Details</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-md font-bold text-zinc-900">Applicant & Artwork Details</h3>
+              <EditArtworkModal
+                artworkId={artwork._id}
+                name={artwork.participant.name}
+                email={artwork.participant.email}
+                state={artwork.participant.state}
+                title={artwork.title}
+                medium={artwork.medium}
+                artworkSize={artwork.artworkSize}
+                venue={artwork.venue}
+                dateCreated={artwork.dateCreated}
+                artworkImage={artwork.artworkImage}
+                proveImage={artwork.proveImage}
+              />
+            </div>
             <div className="flex gap-4">
               <div className="w-[50%] min-w-0 flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
@@ -88,7 +104,7 @@ const ArtworkPage = async (props: PageProps<'/admin/submissions/[id]'>) => {
                 <div className="flex flex-col gap-1">
                   <p className="text-sm text-gray-500 inline-flex items-center">Date of work</p>
                   <p className="text-lg text-zinc-900 inline-flex items-center">
-                    {submittedAtFormatter.format(new Date(artwork.createdAt!))}
+                    {submittedAtFormatter.format(new Date(artwork.dateCreated))}
                   </p>
                 </div>
               </div>

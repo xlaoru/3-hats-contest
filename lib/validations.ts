@@ -109,6 +109,29 @@ export const SubmitArtworkSchema = z.object({
   }),
 })
 
+export const UpdateArtworkDetailsSchema = z.object({
+  artworkId: z.string().min(1, { message: 'Artwork is required.' }),
+  name: z.string().min(1, { message: 'Name is required.' }).max(100),
+  email: z
+    .string()
+    .min(1, { message: 'Email is required.' })
+    .email({ message: 'Please provide a valid email address.' }),
+  state: z.string().min(1, { message: 'State is required.' }).max(100),
+  title: z.string().min(1, { message: 'Title is required.' }).max(150),
+  medium: z.string().min(1, { message: 'Medium is required.' }).max(100),
+  artworkSize: z.string().min(1, { message: 'Artwork size is required.' }).max(100),
+  venue: z.string().min(1, { message: 'Venue is required.' }).max(150),
+  dateCreated: z.coerce.date({ message: 'A valid date is required.' }),
+  artworkImage: z
+    .string()
+    .min(1, { message: 'Artwork image URL is required.' })
+    .url({ message: 'Please provide a valid image URL.' }),
+  proveImage: z
+    .string()
+    .min(1, { message: 'Proof image URL is required.' })
+    .url({ message: 'Please provide a valid image URL.' }),
+})
+
 export const UpdateArtworkStatusSchema = z.object({
   artworkId: z.string().min(1, { message: 'Artwork is required.' }),
   status: ArtworkStatusEnum,
