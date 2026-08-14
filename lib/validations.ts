@@ -137,6 +137,12 @@ export const UpdateArtworkStatusSchema = z.object({
   status: ArtworkStatusEnum,
 })
 
+export const RejectArtworkSchema = z.object({
+  artworkId: z.string().min(1, { message: 'Artwork is required.' }),
+  reason: z.string().min(1, { message: 'Reason for rejection is required.' }).max(200),
+  message: z.string().min(1, { message: 'Message to artist is required.' }).max(1000),
+})
+
 export const AddArtworkNoteSchema = z.object({
   artworkId: z.string().min(1, { message: 'Artwork is required.' }),
   text: z.string().min(1, { message: 'Note text is required.' }).max(2000),

@@ -46,6 +46,12 @@ interface UpdateArtworkStatusParams {
   status: import('@/lib/validations').ArtworkStatus
 }
 
+interface RejectArtworkParams {
+  artworkId: string
+  reason: string
+  message: string
+}
+
 interface UpdateArtworkDetailsParams {
   artworkId: string
   name: string

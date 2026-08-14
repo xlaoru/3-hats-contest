@@ -6,6 +6,7 @@ import Participant, { IParticipantDoc } from '@/database/participant.model'
 import { ActionResponse, ErrorResponse } from '@/types/global'
 import mongoose, { QueryFilter } from 'mongoose'
 import { revalidatePath } from 'next/cache'
+import { sendRejectionEmail } from '../emails/rejection'
 import { sendSubmissionVerificationEmail } from '../emails/submission-verification'
 import action from '../handlers/action'
 import handleError from '../handlers/error'
@@ -21,6 +22,7 @@ import {
   DeleteArtworkNoteSchema,
   GetArtworksSchema,
   LikeArtworkSchema,
+  RejectArtworkSchema,
   SubmitArtworkSchema,
   UpdateArtworkDetailsSchema,
   UpdateArtworkNoteSchema,
@@ -381,6 +383,48 @@ export async function updateArtworkStatus(
 
     artwork.status = status
     await artwork.save()
+
+    revalidatePath(`/admin/submissions/${artworkId}`)
+    revalidatePath('/admin/submissions')
+    revalidatePath('/artworks')
+    revalidatePath(`/artworks/${artworkId}`)
+
+    return { success: true, data: JSON.parse(JSON.stringify(artwork)) }
+  } catch (error) {
+    return handleError(error) as ErrorResponse
+  }
+}
+
+export async function rejectArtwork(
+  params: RejectArtworkParams,
+): Promise<ActionResponse<IArtworkDoc>> {
+  const validationResult = await action({
+    params,
+    schema: RejectArtworkSchema,
+    authorize: true,
+  })
+
+  if (validationResult instanceof Error) {
+    return handleError(validationResult) as ErrorResponse
+  }
+
+  const { artworkId, reason, message } = validationResult.params!
+  const author = validationResult.session!.user?.name ?? 'Admin'
+
+  try {
+    const artwork = await Artwork.findById(artworkId).populate<{
+      participant: IParticipantDoc
+    }>('participant')
+
+    if (!artwork) {
+      throw new NotFoundError('Artwork')
+    }
+
+    artwork.status = 'rejected'
+    artwork.notes.push({ text: `Rejected — reason: ${reason}`, author, createdAt: new Date() })
+    await artwork.save()
+
+    await sendRejectionEmail({ to: artwork.participant.email, message })
 
     revalidatePath(`/admin/submissions/${artworkId}`)
     revalidatePath('/admin/submissions')
