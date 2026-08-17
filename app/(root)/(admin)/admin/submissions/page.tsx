@@ -70,7 +70,7 @@ const Artworks = async (props: PageProps<'/admin/submissions'>) => {
   return (
     <div className="min-h-screen bg-zinc-100 px-6 py-10 flex flex-col gap-8">
       <div className="w-full flex flex-col gap-4">
-        <div className="flex flex-row justify-between items-center">
+        <div className="flex flex-row max-[765px]:flex-col max-[765px]:gap-2 max-[765px]:items-start justify-between items-center">
           <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-bold text-zinc-900">Submissions</h1>
             <p className="text-sm text-zinc-700">Manage and review all competition entries.</p>
@@ -87,8 +87,8 @@ const Artworks = async (props: PageProps<'/admin/submissions'>) => {
           </div>
         </div>
       </div>
-      <div className="flex flex-row gap-6">
-        <div className="w-[75%] min-w-0">
+      <div className="flex flex-row max-[1350px]:flex-col gap-6">
+        <div className="w-[75%] max-[1350px]:w-full min-w-0">
           <Table
             artworks={data.artworks}
             total={data.total}
@@ -98,7 +98,7 @@ const Artworks = async (props: PageProps<'/admin/submissions'>) => {
             filterOptions={filterOptions}
           />
         </div>
-        <div className="w-[25%] min-w-0 flex flex-col gap-6">
+        <div className="w-[25%] max-[1350px]:w-full min-w-0 flex flex-col gap-6">
           <Overview filterOptions={filterOptions} />
           <CompetitionTimeline dates={competitionDates} />
         </div>

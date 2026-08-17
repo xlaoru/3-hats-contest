@@ -45,7 +45,7 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
 
   return (
     <div className="border border-zinc-200 rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-zinc-200">
         <h3 className="font-bold text-zinc-900">Artwork Preview</h3>
         <div className="flex items-center gap-2">
           <a
@@ -54,7 +54,7 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
             rel="noreferrer"
             className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 bg-white hover:bg-zinc-50"
           >
-            Open in new tab
+            <span className="hidden sm:inline">Open in new tab</span>
             <ExternalLink size={14} />
           </a>
           <Popover open={menuOpen} onOpenChange={setMenuOpen}>
@@ -75,11 +75,11 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
           </Popover>
         </div>
       </div>
-      <div className="flex items-center justify-center min-h-[360px] overflow-hidden p-6">
+      <div className="flex items-center justify-center min-h-[240px] sm:min-h-[360px] overflow-hidden p-4 sm:p-6">
         <img
           src={activeSrc}
           alt={title}
-          className="max-h-[360px] max-w-full object-contain transition-transform duration-150"
+          className="max-h-[240px] sm:max-h-[360px] max-w-full object-contain transition-transform duration-150"
           style={{ transform: `scale(${zoom / 100}) rotate(${rotation}deg)` }}
         />
       </div>
@@ -147,25 +147,25 @@ export default function ArtworkPreview({ title, artworkImage, proveImage }: Artw
         <button
           type="button"
           onClick={() => handleTabChange('artwork')}
-          className={`size-70 rounded-lg overflow-hidden border-2 ${activeTab === 'artwork' ? 'border-zinc-900' : 'border-transparent'
+          className={`aspect-square w-full rounded-lg overflow-hidden border-2 ${activeTab === 'artwork' ? 'border-zinc-900' : 'border-transparent'
             }`}
         >
           <img
             src={artworkImage}
             alt={`${title} artwork preview`}
-            className="size-70 object-cover bg-zinc-100"
+            className="size-full object-cover bg-zinc-100"
           />
         </button>
         <button
           type="button"
           onClick={() => handleTabChange('proof')}
-          className={`size-70 rounded-lg overflow-hidden border-2 ${activeTab === 'proof' ? 'border-zinc-900' : 'border-transparent'
+          className={`aspect-square w-full rounded-lg overflow-hidden border-2 ${activeTab === 'proof' ? 'border-zinc-900' : 'border-transparent'
             }`}
         >
           <img
             src={proveImage}
             alt={`${title} proof photo`}
-            className="size-70 w-full object-cover bg-zinc-100"
+            className="size-full object-cover bg-zinc-100"
           />
         </button>
       </div>

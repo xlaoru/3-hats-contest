@@ -16,7 +16,7 @@ const navItems = [
 
 export function Sidebar() {
   return (
-    <aside className="flex h-screen w-36 shrink-0 flex-col overflow-hidden bg-[#0b0f19] text-zinc-300">
+    <aside className="flex h-screen w-36 max-[765px]:w-24 max-[425px]:w-12 shrink-0 flex-col overflow-hidden bg-[#0b0f19] text-zinc-300">
       <div className="shrink-0">
         <Link
           href="/admin/submissions"
@@ -33,17 +33,17 @@ export function Sidebar() {
             className="flex flex-col items-center gap-2 text-xs text-zinc-300 transition-colors hover:text-white cursor-pointer"
           >
             <Icon className="h-6 w-6" strokeWidth={1.5} />
-            {label}
+            <p className="max-[425px]:hidden">{label}</p>
           </Link>
         ))}
       </nav>
       <form action={signOutAction} className="shrink-0">
         <button
           type="submit"
-          className="flex items-center gap-2 border-t border-zinc-800 px-6 py-5 text-sm text-zinc-300 transition-colors hover:text-white cursor-pointer"
+          className="flex items-center gap-2 border-t border-zinc-800 px-6 max-[425]:px-4 py-5 text-sm text-zinc-300 transition-colors hover:text-white cursor-pointer"
         >
           <LogOut className="h-4 w-4" strokeWidth={1.5} />
-          Sign out
+          <p className="max-[425px]:hidden">Sign out</p>
         </button>
       </form>
     </aside>

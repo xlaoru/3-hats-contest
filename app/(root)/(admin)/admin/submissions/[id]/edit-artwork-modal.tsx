@@ -114,7 +114,7 @@ export default function EditArtworkModal(props: EditArtworkModalProps) {
         <Pencil size={14} />
         Edit
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit submission details</DialogTitle>
           <DialogDescription>Update the information below. Changes are saved to the submission.</DialogDescription>
@@ -156,6 +156,16 @@ export default function EditArtworkModal(props: EditArtworkModalProps) {
                   onChange={(e) => update('state', e.target.value)}
                 />
               </div>
+              <div>
+                <label className={labelClass}>Life drawing session venue</label>
+                <input
+                  className={inputClass}
+                  type="text"
+                  required
+                  value={form.venue}
+                  onChange={(e) => update('venue', e.target.value)}
+                />
+              </div>
             </div>
             <div className="flex flex-col gap-3">
               <div>
@@ -187,16 +197,6 @@ export default function EditArtworkModal(props: EditArtworkModalProps) {
                   placeholder="e.g. 50 x 70 cm"
                   value={form.artworkSize}
                   onChange={(e) => update('artworkSize', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Life drawing session venue</label>
-                <input
-                  className={inputClass}
-                  type="text"
-                  required
-                  value={form.venue}
-                  onChange={(e) => update('venue', e.target.value)}
                 />
               </div>
               <div>

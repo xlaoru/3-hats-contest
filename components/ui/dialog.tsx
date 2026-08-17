@@ -24,6 +24,13 @@ function DialogContent({
   showClose = true,
   ...props
 }: DialogPrimitive.Popup.Props & { showClose?: boolean }) {
+  const childArray = React.Children.toArray(children)
+  const headerIndex = childArray.findIndex(
+    (child) => React.isValidElement(child) && child.type === DialogHeader,
+  )
+  const header = headerIndex !== -1 ? childArray[headerIndex] : null
+  const rest = headerIndex !== -1 ? childArray.filter((_, i) => i !== headerIndex) : childArray
+
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Backdrop
@@ -33,20 +40,36 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          'fixed top-1/2 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white p-6 shadow-lg outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+          'fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-white shadow-lg outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           className,
         )}
         {...props}
       >
-        {children}
-        {showClose && (
-          <DialogPrimitive.Close
-            className="absolute top-5 right-5 cursor-pointer text-zinc-400 hover:text-zinc-700"
-            aria-label="Close"
-          >
-            <X size={18} />
-          </DialogPrimitive.Close>
+        {header ? (
+          <div className="sticky top-0 z-10 shrink-0 rounded-t-xl bg-white px-6 pt-6 pr-12">
+            {header}
+            {showClose && (
+              <DialogPrimitive.Close
+                className="absolute top-5 right-5 z-20 cursor-pointer text-zinc-400 hover:text-zinc-700"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </DialogPrimitive.Close>
+            )}
+          </div>
+        ) : (
+          showClose && (
+            <DialogPrimitive.Close
+              className="absolute top-5 right-5 z-20 cursor-pointer text-zinc-400 hover:text-zinc-700"
+              aria-label="Close"
+            >
+              <X size={18} />
+            </DialogPrimitive.Close>
+          )
         )}
+        <div className={cn('min-h-0 flex-1 overflow-y-auto px-6', header ? 'pb-6' : 'py-6')}>
+          {rest}
+        </div>
       </DialogPrimitive.Popup>
     </DialogPrimitive.Portal>
   )

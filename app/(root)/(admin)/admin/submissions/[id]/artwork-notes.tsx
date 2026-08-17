@@ -157,7 +157,7 @@ export default function ArtworkNotes({ artworkId, notes: initialNotes }: Artwork
                         onClick={() => setMenuIndex(isMenuOpen ? null : noteIndex)}
                         disabled={isDeletePending}
                         aria-label="Note actions"
-                        className="shrink-0 rounded-md px-1.5 py-0.5 text-sm leading-none text-zinc-500 hover:bg-amber-100 hover:text-zinc-800 cursor-pointer disabled:opacity-50"
+                        className="shrink-0 rounded-md px-1.5 py-0.5 text-lg leading-none text-zinc-500 hover:bg-amber-100 hover:text-zinc-800 cursor-pointer disabled:opacity-50"
                       >
                         &#8942;
                       </button>

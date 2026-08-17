@@ -19,7 +19,6 @@ const Settings = async () => {
         <h1 className="text-2xl font-bold text-zinc-900">Competition Settings</h1>
         <p className="text-sm text-zinc-700">Manage key dates and the current status of your competition.</p>
       </div>
-
       <SettingsForm dates={competitionDates} />
     </div>
   )

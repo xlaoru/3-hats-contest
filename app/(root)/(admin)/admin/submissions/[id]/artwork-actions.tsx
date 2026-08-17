@@ -164,7 +164,7 @@ export default function ArtworkActions({ artworkId, status }: ArtworkActionsProp
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex gap-1">
+      <div className="flex gap-1 flex-wrap">
         {actions.map((action) => (
           <Button
             key={action.status}

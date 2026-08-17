@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { CompetitionDateItem, updateCompetitionDate } from '@/lib/actions/competitionDate.action'
 import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 
 type SettingsFormProps = {
@@ -88,24 +89,24 @@ function DateField({
 }
 
 export default function SettingsForm({ dates }: SettingsFormProps) {
+  const router = useRouter()
   const initial = useMemo(() => buildInitialValues(dates), [dates])
   const [values, setValues] = useState<FormValues>(initial.values)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const isDirty = fieldConfigs.some((field) => values[field.name] !== initial.values[field.name])
 
   const update = (name: FieldName, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleCancel = () => {
-    setValues(initial.values)
     setError(null)
+    setSuccess(false)
   }
 
   const handleSave = () => {
     setError(null)
+    setSuccess(false)
 
     const changed = fieldConfigs.filter(
       (field) => values[field.name] && values[field.name] !== initial.values[field.name],
@@ -137,7 +138,11 @@ export default function SettingsForm({ dates }: SettingsFormProps) {
 
       if (failed && !failed.success) {
         setError(failed.error?.message ?? "Couldn't save changes, please try again")
+        return
       }
+
+      setSuccess(true)
+      router.refresh()
     })
   }
 
@@ -158,7 +163,6 @@ export default function SettingsForm({ dates }: SettingsFormProps) {
             />
           </div>
         </div>
-
         <div className={rowClass}>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-semibold text-zinc-900">Entries close</p>
@@ -173,7 +177,6 @@ export default function SettingsForm({ dates }: SettingsFormProps) {
             />
           </div>
         </div>
-
         <div className={rowClass}>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-semibold text-zinc-900">People&apos;s Choice</p>
@@ -199,7 +202,6 @@ export default function SettingsForm({ dates }: SettingsFormProps) {
             </div>
           </div>
         </div>
-
         <div className={rowClass}>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-semibold text-zinc-900">Results</p>
@@ -215,13 +217,17 @@ export default function SettingsForm({ dates }: SettingsFormProps) {
           </div>
         </div>
       </div>
-
-      <div className={cn('flex items-center justify-end gap-3 border-t border-zinc-100 px-6 py-4', error && 'justify-between')}>
+      <div
+        className={cn(
+          'flex items-center justify-end gap-3 border-t border-zinc-100 px-6 py-4',
+          (error || success) && 'justify-between',
+        )}
+      >
         {error && <p className="text-sm text-red-600">{error}</p>}
+        {!error && success && (
+          <p className="text-sm text-green-600">Changes successfully applied.</p>
+        )}
         <div className="flex items-center gap-3">
-          <Button type="button" variant="outline" onClick={handleCancel} disabled={isPending || !isDirty}>
-            Cancel
-          </Button>
           <Button type="button" onClick={handleSave} disabled={isPending || !isDirty}>
             {isPending ? 'Saving…' : 'Save changes'}
           </Button>

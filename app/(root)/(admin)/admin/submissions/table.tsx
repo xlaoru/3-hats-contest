@@ -82,7 +82,7 @@ function SearchInput({ initialValue, onDebouncedChange }: SearchInputProps) {
   }
 
   return (
-    <div className="relative w-full max-w-sm">
+    <div className="relative w-full min-w-[220px]">
       <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-zinc-400" />
       <input
         type="text"
@@ -340,14 +340,14 @@ export default function Table({
           </button>
         ))}
       </div>
-      <div className="flex items-center justify-between gap-4 px-6 py-4">
+      <div className="flex items-center justify-between gap-4 overflow-x-auto px-6 py-4 max-[765px]:flex-nowrap">
         <SearchInput
           initialValue={currentQuery}
           onDebouncedChange={(value) =>
             router.push(buildUrl({ query: value || undefined, page: undefined }))
           }
         />
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3 max-[765px]:pr-1">
           <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
             <PopoverTrigger className="cursor-pointer flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700">
               <SlidersHorizontal className="size-4" />

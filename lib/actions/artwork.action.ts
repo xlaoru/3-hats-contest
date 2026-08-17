@@ -421,7 +421,11 @@ export async function rejectArtwork(
     }
 
     artwork.status = 'rejected'
-    artwork.notes.push({ text: `Rejected — reason: ${reason}`, author, createdAt: new Date() })
+    artwork.notes.push({
+      text: `Rejected — reason: ${reason}\n${message}`,
+      author,
+      createdAt: new Date(),
+    })
     await artwork.save()
 
     await sendRejectionEmail({ to: artwork.participant.email, message })
