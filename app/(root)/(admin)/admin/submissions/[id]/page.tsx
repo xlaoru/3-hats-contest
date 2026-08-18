@@ -48,7 +48,7 @@ const ArtworkPage = async (props: PageProps<'/admin/submissions/[id]'>) => {
       : null
 
   return (
-    <div className="min-h-screen bg-zinc-100 px-4 py-6 sm:px-6 sm:py-10 flex flex-col gap-6">
+    <div className="min-h-screen bg-zinc-100 px-4 pt-15 py-4 flex flex-col gap-6">
       <Link
         href="/admin/submissions"
         className="text-sm text-gray-500 hover:text-gray-700 transition-colors inline-flex items-center gap-1"

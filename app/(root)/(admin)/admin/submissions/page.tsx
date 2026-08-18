@@ -68,7 +68,7 @@ const Artworks = async (props: PageProps<'/admin/submissions'>) => {
   const entriesClose = competitionDates.find((item) => item.name === 'Entries close')
 
   return (
-    <div className="min-h-screen bg-zinc-100 px-6 py-10 flex flex-col gap-8">
+    <div className="min-h-screen bg-zinc-100 px-6 pt-15 pb-4 flex flex-col gap-8">
       <div className="w-full flex flex-col gap-4">
         <div className="flex flex-row max-[765px]:flex-col max-[765px]:gap-2 max-[765px]:items-start justify-between items-center">
           <div className="flex flex-col gap-1">

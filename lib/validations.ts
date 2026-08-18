@@ -191,6 +191,17 @@ export const UpdateCompetitionDateSchema = z.object({
   date: z.coerce.date({ message: 'A valid date is required.' }),
 })
 
+export const UpdateJudgeFieldSchema = z
+  .object({
+    judgeId: z.string().min(1, { message: 'Judge is required.' }),
+    field: z.enum(['name', 'email']),
+    value: z.string().trim().max(150, { message: 'Value cannot exceed 150 characters.' }),
+  })
+  .refine(
+    (data) => data.field !== 'email' || data.value === '' || z.string().email().safeParse(data.value).success,
+    { message: 'Please provide a valid email address.', path: ['value'] },
+  )
+
 export const SignInWithOAuthSchema = z.object({
   provider: z.enum(['google', 'github']),
   providerAccountId: z.string().min(1, { message: 'Provider account ID is required.' }),

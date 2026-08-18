@@ -95,6 +95,12 @@ interface UpdateCompetitionDateParams {
   date: Date
 }
 
+interface UpdateJudgeFieldParams {
+  judgeId: string
+  field: 'name' | 'email'
+  value: string
+}
+
 interface SubmitArtworkParams {
   name: string
   email: string
