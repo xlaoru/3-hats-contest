@@ -10,6 +10,10 @@ export const ArtworkStatusEnum = z.enum([
 
 export type ArtworkStatus = z.infer<typeof ArtworkStatusEnum>
 
+export const ArtworkAwardEnum = z.enum(['first', 'second', 'third', 'highly_commended'])
+
+export type ArtworkAward = z.infer<typeof ArtworkAwardEnum>
+
 export const SignInSchema = z.object({
   email: z
     .string()
@@ -200,6 +204,33 @@ export const UpdateJudgeFieldSchema = z
   .refine(
     (data) => data.field !== 'email' || data.value === '' || z.string().email().safeParse(data.value).success,
     { message: 'Please provide a valid email address.', path: ['value'] },
+  )
+
+export const ToggleJudgeShortlistSchema = z.object({
+  slug: z.string().min(1, { message: 'Judge link is required.' }),
+  artworkId: z.string().min(1, { message: 'Artwork is required.' }),
+})
+
+export const SubmitJudgeShortlistSchema = z.object({
+  slug: z.string().min(1, { message: 'Judge link is required.' }),
+})
+
+export const ConfirmWinnersSchema = z
+  .object({
+    first: z.string().min(1, { message: 'First prize work is required.' }),
+    second: z.string().min(1, { message: 'Second prize work is required.' }),
+    third: z.string().min(1, { message: 'Third prize work is required.' }),
+    highlyCommended: z
+      .array(z.string().min(1))
+      .min(1, { message: 'Select at least one Highly Commended work.' })
+      .max(5, { message: 'You can select up to 5 Highly Commended works.' }),
+  })
+  .refine(
+    (data) => {
+      const all = [data.first, data.second, data.third, ...data.highlyCommended]
+      return new Set(all).size === all.length
+    },
+    { message: 'Each work can only be awarded once.', path: ['highlyCommended'] },
   )
 
 export const SignInWithOAuthSchema = z.object({

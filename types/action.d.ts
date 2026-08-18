@@ -101,6 +101,22 @@ interface UpdateJudgeFieldParams {
   value: string
 }
 
+interface ToggleJudgeShortlistParams {
+  slug: string
+  artworkId: string
+}
+
+interface SubmitJudgeShortlistParams {
+  slug: string
+}
+
+interface ConfirmWinnersParams {
+  first: string
+  second: string
+  third: string
+  highlyCommended: string[]
+}
+
 interface SubmitArtworkParams {
   name: string
   email: string

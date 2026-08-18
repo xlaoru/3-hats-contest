@@ -3,7 +3,7 @@
 import { updateJudgeField, type JudgeItem } from '@/lib/actions/judge.action'
 import { JUDGE_SHORTLIST_CAP } from '@/lib/judge-constants'
 import { cn } from '@/lib/utils'
-import { Check, CircleCheck, Copy, ExternalLink, Info } from 'lucide-react'
+import { Check, CircleCheck, Copy, ExternalLink, Info, MoreHorizontal } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, useTransition } from 'react'
 
@@ -11,6 +11,7 @@ export type JudgeRow = JudgeItem & { link: string }
 
 type JudgesTableProps = {
   judges: JudgeRow[]
+  allSubmitted: boolean
 }
 
 function getInitials(name: string | null, index: number): string {
@@ -83,13 +84,15 @@ function InlineEditableField({
   judgeId,
   field,
   value,
-  placeholder,
+  emptyLabel,
+  inputPlaceholder,
   textClassName,
 }: {
   judgeId: string
   field: 'name' | 'email'
   value: string | null
-  placeholder: string
+  emptyLabel: string
+  inputPlaceholder: string
   textClassName: string
 }) {
   const router = useRouter()
@@ -139,7 +142,7 @@ function InlineEditableField({
           autoFocus
           value={draft}
           disabled={isPending}
-          placeholder={placeholder}
+          placeholder={inputPlaceholder}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -165,18 +168,34 @@ function InlineEditableField({
     )
   }
 
+  if (!current) {
+    return (
+      <button
+        type="button"
+        onClick={startEditing}
+        className="inline-flex w-fit cursor-pointer items-center rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+      >
+        {emptyLabel}
+      </button>
+    )
+  }
+
   return (
-    <button
-      type="button"
-      onClick={startEditing}
-      className={cn('cursor-pointer rounded px-1 -mx-1 text-left hover:bg-zinc-100', textClassName)}
-    >
-      {current || <span className="text-zinc-400 italic">{placeholder}</span>}
-    </button>
+    <div className="flex items-center gap-1">
+      <span className={cn('truncate', textClassName)}>{current}</span>
+      <button
+        type="button"
+        onClick={startEditing}
+        aria-label={`Edit ${field}`}
+        className="shrink-0 cursor-pointer rounded p-0.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+      >
+        <MoreHorizontal className="size-3.5" />
+      </button>
+    </div>
   )
 }
 
-export default function JudgesTable({ judges }: JudgesTableProps) {
+export default function JudgesTable({ judges, allSubmitted }: JudgesTableProps) {
   const allLinks = judges.map((judge) => judge.link).join('\n')
 
   return (
@@ -211,19 +230,22 @@ export default function JudgesTable({ judges }: JudgesTableProps) {
                       <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-xs font-semibold text-zinc-700">
                         {getInitials(judge.name, judge.index)}
                       </div>
-                      <div className="flex min-w-0 flex-col gap-0.5">
+                      <div className="flex min-w-0 flex-col gap-1">
+                        <p className="text-sm font-semibold text-zinc-900">Judge {judge.index}</p>
                         <InlineEditableField
                           judgeId={judge._id}
                           field="name"
                           value={judge.name}
-                          placeholder={`Judge ${judge.index}`}
-                          textClassName="text-sm font-semibold text-zinc-900"
+                          emptyLabel="Add name"
+                          inputPlaceholder="Full name"
+                          textClassName="text-sm text-zinc-700"
                         />
                         <InlineEditableField
                           judgeId={judge._id}
                           field="email"
                           value={judge.email}
-                          placeholder="Add email"
+                          emptyLabel="Add email"
+                          inputPlaceholder="name@example.com"
                           textClassName="text-sm text-zinc-500"
                         />
                       </div>
@@ -282,25 +304,16 @@ export default function JudgesTable({ judges }: JudgesTableProps) {
         </table>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-zinc-100 bg-blue-50/60 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <Info className="mt-0.5 size-5 shrink-0 text-blue-500" />
-          <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-semibold text-zinc-900">What happens next?</p>
-            <p className="text-sm text-zinc-600">
-              When all judges have finished their shortlists, you can combine them to create the
-              shortlist for final judging.
-            </p>
-          </div>
+      <div className="flex items-start gap-3 border-t border-zinc-100 bg-blue-50/60 px-6 py-5">
+        <Info className="mt-0.5 size-5 shrink-0 text-blue-500" />
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm font-semibold text-zinc-900">What happens next?</p>
+          <p className="text-sm text-zinc-600">
+            {allSubmitted
+              ? 'Review the combined shortlist created from all judges. You can see how many judges selected each work and choose the winners.'
+              : 'When all judges have finished their shortlists, you can combine them to create the shortlist for final judging.'}
+          </p>
         </div>
-        <button
-          type="button"
-          disabled
-          title="Available once every judge has submitted their shortlist"
-          className="shrink-0 cursor-not-allowed rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-400"
-        >
-          View shortlist (disabled)
-        </button>
       </div>
     </div>
   )
