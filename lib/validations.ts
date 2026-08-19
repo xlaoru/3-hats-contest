@@ -223,7 +223,7 @@ export const ConfirmWinnersSchema = z
     highlyCommended: z
       .array(z.string().min(1))
       .min(1, { message: 'Select at least one Highly Commended work.' })
-      .max(5, { message: 'You can select up to 5 Highly Commended works.' }),
+      .max(2, { message: 'You can select up to 2 Highly Commended works.' }),
   })
   .refine(
     (data) => {

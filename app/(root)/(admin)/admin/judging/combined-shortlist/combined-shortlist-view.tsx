@@ -38,7 +38,7 @@ const assignOptions: { key: PickerTarget; label: string; icon: ReactNode }[] = [
 
 const assignOptionsByKey = new Map(assignOptions.map((option) => [option.key, option]))
 
-const HIGHLY_COMMENDED_CAP = 5
+const HIGHLY_COMMENDED_CAP = 2
 
 export default function CombinedShortlistView({ groups }: { groups: CombinedShortlistGroup[] }) {
   const [activeGroup, setActiveGroup] = useState(0)
