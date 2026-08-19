@@ -12,11 +12,12 @@ import type { PublicArtwork } from '@/lib/actions/artwork.action'
 import { submitJudgeShortlist, toggleJudgeShortlistArtwork } from '@/lib/actions/judge.action'
 import { JUDGE_SHORTLIST_CAP } from '@/lib/judge-constants'
 import { cn } from '@/lib/utils'
-import { Check, CircleCheck, X } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, CircleCheck, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
 type Tab = 'submissions' | 'shortlist'
+type PreviewSource = 'submissions' | 'shortlist'
 
 type JudgeGalleryProps = {
   artworks: PublicArtwork[]
@@ -35,6 +36,8 @@ export default function JudgeGallery({
   const [tab, setTab] = useState<Tab>('submissions')
   const [selected, setSelected] = useState<Set<string>>(new Set(initialShortlist))
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [previewSource, setPreviewSource] = useState<PreviewSource | null>(null)
+  const [rawPreviewIndex, setRawPreviewIndex] = useState<number | null>(null)
   const [submitted, setSubmitted] = useState(initialSubmitted)
   const [error, setError] = useState<string | null>(null)
   const [pendingId, setPendingId] = useState<string | null>(null)
@@ -78,7 +81,70 @@ export default function JudgeGallery({
     })
   }
 
+  const renderVoteButton = (artwork: PublicArtwork) => {
+    const isSelected = selected.has(artwork._id)
+    const atCap = !isSelected && selected.size >= JUDGE_SHORTLIST_CAP
+
+    return (
+      <button
+        type="button"
+        onClick={() => toggle(artwork._id)}
+        disabled={atCap || pendingId === artwork._id}
+        className={cn(
+          'group inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
+          isSelected
+            ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600'
+            : 'bg-zinc-900 text-white hover:bg-zinc-800 active:bg-zinc-950',
+          (atCap || pendingId === artwork._id) &&
+            'cursor-not-allowed bg-zinc-100 text-zinc-400 hover:border-transparent hover:bg-zinc-100 hover:text-zinc-400',
+        )}
+      >
+        {isSelected ? (
+          <>
+            <Check className="size-4 group-hover:hidden" />
+            <X className="hidden size-4 group-hover:inline" />
+            <span className="group-hover:hidden">Voted</span>
+            <span className="hidden group-hover:inline">Unvote</span>
+          </>
+        ) : (
+          'Vote'
+        )}
+      </button>
+    )
+  }
+
   const shortlisted = artworks.filter((artwork) => selected.has(artwork._id))
+
+  const previewList = previewSource === 'shortlist' ? shortlisted : artworks
+  // Clamp instead of storing raw index: if the active list shrinks (e.g. unvoting removes the
+  // current item), this keeps the slider in range without an effect-driven setState.
+  const previewIndex =
+    rawPreviewIndex !== null && previewList.length > 0
+      ? Math.min(rawPreviewIndex, previewList.length - 1)
+      : null
+  const previewArtwork = previewIndex !== null ? previewList[previewIndex] : null
+
+  const openPreview = (source: PreviewSource, list: PublicArtwork[], artwork: PublicArtwork) => {
+    const index = list.findIndex((item) => item._id === artwork._id)
+    if (index === -1) return
+    setPreviewSource(source)
+    setRawPreviewIndex(index)
+  }
+
+  const closePreview = () => {
+    setPreviewSource(null)
+    setRawPreviewIndex(null)
+  }
+
+  const showPrevPreview = () => {
+    if (previewIndex !== null && previewIndex > 0) setRawPreviewIndex(previewIndex - 1)
+  }
+
+  const showNextPreview = () => {
+    if (previewIndex !== null && previewIndex < previewList.length - 1) {
+      setRawPreviewIndex(previewIndex + 1)
+    }
+  }
 
   const handleSubmit = () => {
     setError(null)
@@ -98,12 +164,12 @@ export default function JudgeGallery({
 
   if (submitted) {
     return (
-      <div className="rounded-2xl bg-white p-12 text-center shadow-md">
+      <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center shadow-sm">
         <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-emerald-100">
           <CircleCheck className="size-6 text-emerald-600" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900">Shortlist submitted</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
+        <h2 className="text-xl font-bold text-zinc-900">Shortlist submitted</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm text-zinc-500">
           Your {shortlisted.length} selected work{shortlisted.length === 1 ? '' : 's'}{' '}
           {shortlisted.length === 1 ? 'has' : 'have'} been sent to the admin. You can&apos;t make
           further changes.
@@ -114,13 +180,13 @@ export default function JudgeGallery({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-6 border-b border-gray-200">
+      <div className="flex items-center gap-6 border-b border-zinc-200">
         <button
           type="button"
           onClick={() => setTab('submissions')}
           className={cn(
-            'cursor-pointer border-b-2 border-transparent py-3 text-sm font-medium text-gray-500 hover:text-gray-700',
-            tab === 'submissions' && 'border-blue-500 text-gray-900',
+            'cursor-pointer border-b-2 border-transparent py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700',
+            tab === 'submissions' && 'border-zinc-900 text-zinc-900',
           )}
         >
           Submissions
@@ -129,8 +195,8 @@ export default function JudgeGallery({
           type="button"
           onClick={() => setTab('shortlist')}
           className={cn(
-            'cursor-pointer border-b-2 border-transparent py-3 text-sm font-medium text-gray-500 hover:text-gray-700',
-            tab === 'shortlist' && 'border-blue-500 text-gray-900',
+            'cursor-pointer border-b-2 border-transparent py-3 text-sm font-medium text-zinc-500 hover:text-zinc-700',
+            tab === 'shortlist' && 'border-zinc-900 text-zinc-900',
           )}
         >
           Shortlist ({selected.size})
@@ -138,126 +204,175 @@ export default function JudgeGallery({
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600">
+          {error}
+        </div>
       )}
 
       {tab === 'submissions' && (
         <>
-          <div className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-sm">
-            <p className="text-sm text-gray-600">Vote for the works you&apos;d like to shortlist.</p>
-            <p className="text-sm font-semibold text-gray-900">
+          <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-sm text-zinc-600">Vote for the works you&apos;d like to shortlist.</p>
+            <p className="text-sm font-semibold text-zinc-900">
               {selected.size} / {JUDGE_SHORTLIST_CAP} selected
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {artworks.map((artwork) => {
-              const isSelected = selected.has(artwork._id)
-              const atCap = !isSelected && selected.size >= JUDGE_SHORTLIST_CAP
-
-              return (
-                <div key={artwork._id} className="overflow-hidden rounded-2xl bg-white shadow-md">
-                  <div className="h-56 overflow-hidden bg-gray-100">
-                    <img
-                      src={artwork.artworkImage}
-                      alt={artwork.title}
-                      className="h-full w-full object-cover"
-                    />
+            {artworks.map((artwork) => (
+              <div
+                key={artwork._id}
+                className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
+              >
+                <button
+                  type="button"
+                  onClick={() => openPreview('submissions', artworks, artwork)}
+                  className="block h-56 w-full cursor-pointer overflow-hidden bg-zinc-100"
+                >
+                  <img
+                    src={artwork.artworkImage}
+                    alt={artwork.title}
+                    className="h-full w-full object-cover transition-transform hover:scale-105"
+                  />
+                </button>
+                <div className="flex flex-col gap-3 p-4">
+                  <div>
+                    <h2 className="truncate text-base font-semibold text-zinc-900">
+                      {artwork.title}
+                    </h2>
+                    <p className="truncate text-sm text-zinc-500">
+                      {artwork.participant.name} · {artwork.participant.state}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-zinc-400">{artwork.medium}</p>
                   </div>
-                  <div className="flex flex-col gap-3 p-4">
-                    <button
-                      type="button"
-                      onClick={() => toggle(artwork._id)}
-                      disabled={atCap || pendingId === artwork._id}
-                      className={cn(
-                        'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors',
-                        isSelected
-                          ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
-                          : 'bg-blue-500 hover:bg-blue-600 active:bg-blue-700',
-                        (atCap || pendingId === artwork._id) &&
-                          'cursor-not-allowed bg-gray-200 text-gray-400 hover:bg-gray-200',
-                      )}
-                    >
-                      {isSelected ? (
-                        <>
-                          <Check className="size-4" /> Voted
-                        </>
-                      ) : (
-                        'Vote for this work'
-                      )}
-                    </button>
-                    <div>
-                      <h2 className="truncate text-base font-semibold text-gray-900">
-                        {artwork.title}
-                      </h2>
-                      <p className="truncate text-sm text-gray-500">
-                        {artwork.participant.name} · {artwork.participant.state}
-                      </p>
-                      <p className="mt-1 truncate text-xs text-gray-400">{artwork.medium}</p>
-                    </div>
-                  </div>
+                  {renderVoteButton(artwork)}
                 </div>
-              )
-            })}
+              </div>
+            ))}
           </div>
         </>
       )}
-
       {tab === 'shortlist' && (
         <>
-          {shortlisted.length === 0 ? (
-            <div className="rounded-2xl bg-white p-12 text-center text-gray-400 shadow-md">
-              You haven&apos;t voted for any works yet. Switch to Submissions to start.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {shortlisted.map((artwork) => (
-                <div key={artwork._id} className="overflow-hidden rounded-2xl bg-white shadow-md">
-                  <div className="h-56 overflow-hidden bg-gray-100">
-                    <img
-                      src={artwork.artworkImage}
-                      alt={artwork.title}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-3 p-4">
-                    <button
-                      type="button"
-                      onClick={() => toggle(artwork._id)}
-                      disabled={pendingId === artwork._id}
-                      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <X className="size-4" /> Remove from shortlist
-                    </button>
-                    <div>
-                      <h2 className="truncate text-base font-semibold text-gray-900">
-                        {artwork.title}
-                      </h2>
-                      <p className="truncate text-sm text-gray-500">
-                        {artwork.participant.name} · {artwork.participant.state}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
           <div className="flex flex-col items-end gap-2">
             <button
               type="button"
               disabled={selected.size === 0 || isSubmitting}
               onClick={() => setConfirmOpen(true)}
-              className="inline-flex w-fit cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-600 active:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+              className="inline-flex w-fit cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 active:bg-zinc-950 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-400"
             >
               Submit shortlist
             </button>
             {selected.size === 0 && (
-              <p className="text-xs text-gray-400">Vote for at least one work before submitting.</p>
+              <p className="text-xs text-zinc-400">Vote for at least one work before submitting.</p>
             )}
           </div>
+          {shortlisted.length === 0 ? (
+            <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center text-zinc-400 shadow-sm">
+              You haven&apos;t voted for any works yet. Switch to Submissions to start.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {shortlisted.map((artwork) => (
+                <div
+                  key={artwork._id}
+                  className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
+                >
+                  <button
+                    type="button"
+                    onClick={() => openPreview('shortlist', shortlisted, artwork)}
+                    className="block h-56 w-full cursor-pointer overflow-hidden bg-zinc-100"
+                  >
+                    <img
+                      src={artwork.artworkImage}
+                      alt={artwork.title}
+                      className="h-full w-full object-cover transition-transform hover:scale-105"
+                    />
+                  </button>
+                  <div className="flex flex-col gap-3 p-4">
+                    <div>
+                      <h2 className="truncate text-base font-semibold text-zinc-900">
+                        {artwork.title}
+                      </h2>
+                      <p className="truncate text-sm text-zinc-500">
+                        {artwork.participant.name} · {artwork.participant.state}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggle(artwork._id)}
+                      disabled={pendingId === artwork._id}
+                      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <X className="size-4" /> Remove from shortlist
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
+
+      <Dialog open={!!previewArtwork} onOpenChange={(open) => !open && closePreview()}>
+        <DialogContent
+          showClose={false}
+          className="flex max-h-[90vh] w-full max-w-[90vw] flex-col gap-4 sm:max-w-[90vw]"
+        >
+          {previewArtwork && previewIndex !== null && (
+            <>
+              <div className="relative flex max-h-[75vh] items-center justify-center overflow-hidden rounded-lg bg-zinc-100">
+                <img
+                  src={previewArtwork.artworkImage}
+                  alt={previewArtwork.title}
+                  className="max-h-[75vh] max-w-full object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={closePreview}
+                  aria-label="Close"
+                  className="absolute top-4 right-4 flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-zinc-500 shadow-sm hover:bg-white hover:text-zinc-900"
+                >
+                  <X className="size-4" />
+                </button>
+                {previewList.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={showPrevPreview}
+                      disabled={previewIndex === 0}
+                      aria-label="Previous artwork"
+                      className="absolute top-1/2 left-4 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/90 text-zinc-500 shadow-sm hover:bg-white hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white/90 disabled:hover:text-zinc-500"
+                    >
+                      <ChevronLeft className="size-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={showNextPreview}
+                      disabled={previewIndex === previewList.length - 1}
+                      aria-label="Next artwork"
+                      className="absolute top-1/2 right-4 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/90 text-zinc-500 shadow-sm hover:bg-white hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white/90 disabled:hover:text-zinc-500"
+                    >
+                      <ChevronRight className="size-5" />
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="mt-2 flex shrink-0 items-end justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 className="truncate text-lg font-semibold text-zinc-900">
+                    {previewArtwork.title}
+                  </h2>
+                  <p className="truncate text-sm text-zinc-500">
+                    {previewArtwork.medium} · {previewArtwork.artworkSize}
+                  </p>
+                </div>
+                <div className="shrink-0">{renderVoteButton(previewArtwork)}</div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="max-w-sm">
@@ -273,7 +388,7 @@ export default function JudgeGallery({
               type="button"
               onClick={() => setConfirmOpen(false)}
               disabled={isSubmitting}
-              className="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -281,7 +396,7 @@ export default function JudgeGallery({
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="cursor-pointer rounded-lg bg-blue-500 px-4 py-2 text-sm text-white hover:bg-blue-600 disabled:opacity-50"
+              className="cursor-pointer rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800 disabled:opacity-50"
             >
               {isSubmitting ? 'Submitting...' : 'Submit shortlist'}
             </button>
