@@ -22,7 +22,6 @@ const JudgeGalleryPage = async (props: PageProps<'/judge/[slug]'>) => {
           </p>
           <div className="flex items-end justify-between gap-4">
             <h1 className="text-2xl font-bold text-zinc-900">Judging gallery</h1>
-            {artworks && <span className="text-sm text-zinc-500">{artworks.length} entries</span>}
           </div>
         </div>
 

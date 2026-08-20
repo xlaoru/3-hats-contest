@@ -69,7 +69,8 @@ const WinnersPage = async () => {
                 <p className="font-semibold">How it works</p>
                 <p>
                   Select one artwork for First, Second, Third, and up to 2 Highly Commended
-                  awards, plus one for People&apos;s Choice.
+                  awards. People&apos;s Choice is determined by public voting and isn&apos;t
+                  assigned here.
                 </p>
                 <p>Once all winners are selected, review them on this page and confirm from here.</p>
               </div>

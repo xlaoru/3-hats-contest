@@ -75,7 +75,7 @@ export async function getWinners(): Promise<ActionResponse<WinnersData>> {
       : null
     const highlyCommended = byAward('highly_commended').map(toWinnerItem)
 
-    const winnersAssigned = Boolean(first && second && third && peoplesChoice)
+    const winnersAssigned = Boolean(first && second && third)
 
     return {
       success: true,
@@ -105,14 +105,13 @@ export async function lockWinners(): Promise<ActionResponse> {
 
     await dbConnect()
 
-    const [firstCount, secondCount, thirdCount, peoplesChoiceCount] = await Promise.all([
+    const [firstCount, secondCount, thirdCount] = await Promise.all([
       Artwork.countDocuments({ award: 'first' }),
       Artwork.countDocuments({ award: 'second' }),
       Artwork.countDocuments({ award: 'third' }),
-      Artwork.countDocuments({ award: 'people_choice' }),
     ])
 
-    if (!firstCount || !secondCount || !thirdCount || !peoplesChoiceCount) {
+    if (!firstCount || !secondCount || !thirdCount) {
       throw new RequestError(400, 'Select all winners before confirming and locking results')
     }
 

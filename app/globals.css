@@ -127,4 +127,13 @@
   html {
     @apply font-sans;
   }
+
+  /* base-ui's scroll lock keeps the scrollbar gutter reserved (to avoid a layout
+     shift) while a dialog is open, which shows up as a bare strip next to the
+     backdrop. Our dialogs' backdrops already cover the full page, so there's
+     nothing behind them to protect from shifting — let the gutter collapse. */
+  html[data-base-ui-scroll-locked] {
+    overflow-y: hidden !important;
+    scrollbar-gutter: auto !important;
+  }
 }

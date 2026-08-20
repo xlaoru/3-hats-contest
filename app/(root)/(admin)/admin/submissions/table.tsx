@@ -16,9 +16,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Download,
   Search,
-  SlidersHorizontal,
+  SlidersHorizontal
 } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -361,10 +360,6 @@ export default function Table({
               />
             </PopoverContent>
           </Popover>
-          <button className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 cursor-pointer">
-            <Download className="size-4" />
-            Export
-          </button>
         </div>
       </div>
       <div className="overflow-x-auto">

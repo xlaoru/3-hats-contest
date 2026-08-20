@@ -96,7 +96,7 @@ export default function JudgeGallery({
             ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600'
             : 'bg-zinc-900 text-white hover:bg-zinc-800 active:bg-zinc-950',
           (atCap || pendingId === artwork._id) &&
-            'cursor-not-allowed bg-zinc-100 text-zinc-400 hover:border-transparent hover:bg-zinc-100 hover:text-zinc-400',
+          'cursor-not-allowed bg-zinc-100 text-zinc-400 hover:border-transparent hover:bg-zinc-100 hover:text-zinc-400',
         )}
       >
         {isSelected ? (
@@ -189,7 +189,7 @@ export default function JudgeGallery({
             tab === 'submissions' && 'border-zinc-900 text-zinc-900',
           )}
         >
-          Submissions
+          Submissions ({artworks.length})
         </button>
         <button
           type="button"
@@ -317,15 +317,15 @@ export default function JudgeGallery({
       <Dialog open={!!previewArtwork} onOpenChange={(open) => !open && closePreview()}>
         <DialogContent
           showClose={false}
-          className="flex max-h-[90vh] w-full max-w-[90vw] flex-col gap-4 sm:max-w-[90vw]"
+          className="inset-6 flex h-auto w-auto max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-4 rounded-xl"
         >
           {previewArtwork && previewIndex !== null && (
-            <>
-              <div className="relative flex max-h-[75vh] items-center justify-center overflow-hidden rounded-lg bg-zinc-100">
+            <div className="flex h-full min-h-0 flex-col gap-4">
+              <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-zinc-100">
                 <img
                   src={previewArtwork.artworkImage}
                   alt={previewArtwork.title}
-                  className="max-h-[75vh] max-w-full object-contain"
+                  className="max-h-full max-w-full object-contain"
                 />
                 <button
                   type="button"
@@ -369,7 +369,7 @@ export default function JudgeGallery({
                 </div>
                 <div className="shrink-0">{renderVoteButton(previewArtwork)}</div>
               </div>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>
