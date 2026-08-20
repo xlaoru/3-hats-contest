@@ -20,6 +20,7 @@ import {
   ChevronDown,
   CircleCheck,
   Eye,
+  Heart,
   Info,
   Lock,
   Medal,
@@ -31,7 +32,7 @@ import {
 import type { ReactNode } from 'react'
 import { useMemo, useState, useTransition } from 'react'
 
-type SlotKey = 'first' | 'second' | 'third'
+type SlotKey = 'first' | 'second' | 'third' | 'peoplesChoice'
 
 type PickerTarget = SlotKey | 'highlyCommended'
 
@@ -41,6 +42,7 @@ const slotConfig: { key: SlotKey; label: string }[] = [
   { key: 'first', label: 'First Prize' },
   { key: 'second', label: 'Second Prize' },
   { key: 'third', label: 'Third Prize' },
+  { key: 'peoplesChoice', label: "People's Choice" },
 ]
 
 const assignOptions: { key: PickerTarget; label: string; icon: ReactNode }[] = [
@@ -48,6 +50,7 @@ const assignOptions: { key: PickerTarget; label: string; icon: ReactNode }[] = [
   { key: 'second', label: 'Second Prize', icon: <Medal className="size-4" /> },
   { key: 'third', label: 'Third Prize', icon: <Medal className="size-4" /> },
   { key: 'highlyCommended', label: 'Highly Commended', icon: <Star className="size-4" /> },
+  { key: 'peoplesChoice', label: "People's Choice", icon: <Heart className="size-4" /> },
 ]
 
 const assignOptionsByKey = new Map(assignOptions.map((option) => [option.key, option]))
@@ -60,6 +63,7 @@ function initialWinners(groups: CombinedShortlistGroup[]): Record<SlotKey, strin
     first: flat.find((item) => item.award === 'first')?.artworkId ?? null,
     second: flat.find((item) => item.award === 'second')?.artworkId ?? null,
     third: flat.find((item) => item.award === 'third')?.artworkId ?? null,
+    peoplesChoice: flat.find((item) => item.award === 'people_choice')?.artworkId ?? null,
   }
 }
 
@@ -153,14 +157,24 @@ export default function CombinedShortlistView({ groups }: { groups: CombinedShor
     if (winners.first === artworkId) return 'first'
     if (winners.second === artworkId) return 'second'
     if (winners.third === artworkId) return 'third'
+    if (winners.peoplesChoice === artworkId) return 'peoplesChoice'
     if (highlyCommended.includes(artworkId)) return 'highlyCommended'
     return null
   }
 
-  const canConfirm = Boolean(winners.first && winners.second && winners.third) && highlyCommended.length > 0
+  const canConfirm =
+    Boolean(winners.first && winners.second && winners.third && winners.peoplesChoice) &&
+    highlyCommended.length > 0
 
   const handleConfirm = () => {
-    if (!winners.first || !winners.second || !winners.third || highlyCommended.length === 0) return
+    if (
+      !winners.first ||
+      !winners.second ||
+      !winners.third ||
+      !winners.peoplesChoice ||
+      highlyCommended.length === 0
+    )
+      return
 
     setError(null)
     startTransition(async () => {
@@ -169,6 +183,7 @@ export default function CombinedShortlistView({ groups }: { groups: CombinedShor
         second: winners.second!,
         third: winners.third!,
         highlyCommended,
+        peoplesChoice: winners.peoplesChoice!,
       })
 
       setConfirmOpen(false)
@@ -374,8 +389,8 @@ export default function CombinedShortlistView({ groups }: { groups: CombinedShor
             </button>
             {!canConfirm && (
               <p className="mt-2 text-xs text-zinc-400">
-                Please select First, Second, Third and at least one Highly Commended work to
-                continue.
+                Please select First, Second, Third, People&apos;s Choice and at least one Highly
+                Commended work to continue.
               </p>
             )}
           </>

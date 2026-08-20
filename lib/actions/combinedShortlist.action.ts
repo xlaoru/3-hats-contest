@@ -112,8 +112,8 @@ export async function confirmWinners(params: ConfirmWinnersParams): Promise<Acti
     return handleError(validationResult) as ErrorResponse
   }
 
-  const { first, second, third, highlyCommended } = validationResult.params!
-  const winningIds = [first, second, third, ...highlyCommended]
+  const { first, second, third, highlyCommended, peoplesChoice } = validationResult.params!
+  const winningIds = [first, second, third, peoplesChoice, ...highlyCommended]
 
   const session = await mongoose.startSession()
 
@@ -130,6 +130,7 @@ export async function confirmWinners(params: ConfirmWinnersParams): Promise<Acti
     await Artwork.findByIdAndUpdate(first, { award: 'first' }, { session })
     await Artwork.findByIdAndUpdate(second, { award: 'second' }, { session })
     await Artwork.findByIdAndUpdate(third, { award: 'third' }, { session })
+    await Artwork.findByIdAndUpdate(peoplesChoice, { award: 'people_choice' }, { session })
     await Artwork.updateMany(
       { _id: { $in: highlyCommended } },
       { award: 'highly_commended' },

@@ -115,6 +115,7 @@ interface ConfirmWinnersParams {
   second: string
   third: string
   highlyCommended: string[]
+  peoplesChoice: string
 }
 
 interface SubmitArtworkParams {

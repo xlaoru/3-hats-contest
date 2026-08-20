@@ -10,7 +10,13 @@ export const ArtworkStatusEnum = z.enum([
 
 export type ArtworkStatus = z.infer<typeof ArtworkStatusEnum>
 
-export const ArtworkAwardEnum = z.enum(['first', 'second', 'third', 'highly_commended'])
+export const ArtworkAwardEnum = z.enum([
+  'first',
+  'second',
+  'third',
+  'highly_commended',
+  'people_choice',
+])
 
 export type ArtworkAward = z.infer<typeof ArtworkAwardEnum>
 
@@ -224,10 +230,11 @@ export const ConfirmWinnersSchema = z
       .array(z.string().min(1))
       .min(1, { message: 'Select at least one Highly Commended work.' })
       .max(2, { message: 'You can select up to 2 Highly Commended works.' }),
+    peoplesChoice: z.string().min(1, { message: "People's Choice work is required." }),
   })
   .refine(
     (data) => {
-      const all = [data.first, data.second, data.third, ...data.highlyCommended]
+      const all = [data.first, data.second, data.third, data.peoplesChoice, ...data.highlyCommended]
       return new Set(all).size === all.length
     },
     { message: 'Each work can only be awarded once.', path: ['highlyCommended'] },
