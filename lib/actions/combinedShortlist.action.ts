@@ -11,7 +11,7 @@ import action from '../handlers/action'
 import handleError from '../handlers/error'
 import { NotFoundError } from '../http-errors'
 import dbConnect from '../mongoose'
-import { ConfirmWinnersSchema } from '../validations'
+import { ArtworkAward, ConfirmWinnersSchema } from '../validations'
 
 export type CombinedShortlistItem = {
   artworkId: string
@@ -22,6 +22,7 @@ export type CombinedShortlistItem = {
   participantName: string
   participantState: string
   selectedBy: { index: number; label: string }[]
+  award: ArtworkAward | null
 }
 
 export type CombinedShortlistGroup = {
@@ -82,6 +83,7 @@ export async function getCombinedShortlist(): Promise<ActionResponse<CombinedSho
         participantName: artwork.participant.name,
         participantState: artwork.participant.state,
         selectedBy,
+        award: artwork.award ?? null,
       }
 
       const count = selectedBy.length

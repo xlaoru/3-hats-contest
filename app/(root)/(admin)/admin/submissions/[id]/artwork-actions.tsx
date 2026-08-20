@@ -165,18 +165,20 @@ export default function ArtworkActions({ artworkId, status }: ArtworkActionsProp
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-1 flex-wrap">
-        {actions.map((action) => (
-          <Button
-            key={action.status}
-            className={`cursor-pointer rounded-lg border border-zinc-200 px-3 py-2 text-sm ${action.primary ? '' : 'text-zinc-700 bg-white'}`}
-            variant={action.primary ? undefined : 'secondary'}
-            disabled={isPending || status === action.status}
-            onClick={() => handleActionClick(action.status)}
-          >
-            {action.icon}
-            {isPending && pendingStatus === action.status ? action.pendingLabel : action.label}
-          </Button>
-        ))}
+        {actions
+          .filter((action) => action.status !== status)
+          .map((action) => (
+            <Button
+              key={action.status}
+              className={`cursor-pointer rounded-lg border border-zinc-200 px-3 py-2 text-sm ${action.primary ? '' : 'text-zinc-700 bg-white'}`}
+              variant={action.primary ? undefined : 'secondary'}
+              disabled={isPending}
+              onClick={() => handleActionClick(action.status)}
+            >
+              {action.icon}
+              {isPending && pendingStatus === action.status ? action.pendingLabel : action.label}
+            </Button>
+          ))}
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
 

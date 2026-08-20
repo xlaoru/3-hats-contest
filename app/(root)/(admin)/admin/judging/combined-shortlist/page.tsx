@@ -38,10 +38,9 @@ const CombinedShortlistPage = async () => {
         <>
           <div className="flex flex-col gap-1">
             <h1 className="text-2xl font-bold text-zinc-900">Combined shortlist &amp; select winners</h1>
-            <p className="max-w-3xl text-sm text-zinc-700">
+            <p className="max-w-4xl text-sm text-zinc-700">
               All three judges have submitted their shortlists. Below is the combined shortlist
-              showing how many judges selected each work. Open a work&apos;s details to verify it
-              before choosing the winners.
+              showing how many judges selected each work.
             </p>
           </div>
 

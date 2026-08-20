@@ -87,6 +87,7 @@ function InlineEditableField({
   emptyLabel,
   inputPlaceholder,
   textClassName,
+  copyable,
 }: {
   judgeId: string
   field: 'name' | 'email'
@@ -94,6 +95,7 @@ function InlineEditableField({
   emptyLabel: string
   inputPlaceholder: string
   textClassName: string
+  copyable?: boolean
 }) {
   const router = useRouter()
   const current = value ?? ''
@@ -191,18 +193,22 @@ function InlineEditableField({
       >
         <MoreHorizontal className="size-3.5" />
       </button>
+      {copyable && (
+        <CopyButton
+          value={current}
+          label=""
+          className="border-0 bg-transparent px-0.5 py-0.5 hover:bg-zinc-100"
+        />
+      )}
     </div>
   )
 }
 
 export default function JudgesTable({ judges, allSubmitted }: JudgesTableProps) {
-  const allLinks = judges.map((judge) => judge.link).join('\n')
-
   return (
     <div className="w-full rounded-xl border border-zinc-200 bg-white shadow-sm">
       <div className="flex items-center justify-between gap-4 border-b border-zinc-100 px-6 py-5">
         <h2 className="text-lg font-bold text-zinc-900">Judges</h2>
-        <CopyButton value={allLinks} label="Copy all links" />
       </div>
 
       <div className="overflow-x-auto">
@@ -247,6 +253,7 @@ export default function JudgesTable({ judges, allSubmitted }: JudgesTableProps) 
                           emptyLabel="Add email"
                           inputPlaceholder="name@example.com"
                           textClassName="text-sm text-zinc-500"
+                          copyable
                         />
                       </div>
                     </div>
@@ -277,7 +284,10 @@ export default function JudgesTable({ judges, allSubmitted }: JudgesTableProps) 
                       </p>
                       <div className="h-1.5 w-full max-w-36 rounded-full bg-zinc-200">
                         <div
-                          className="h-1.5 rounded-full bg-zinc-900"
+                          className={cn(
+                            'h-1.5 rounded-full',
+                            percent === 100 ? 'bg-emerald-600' : 'bg-zinc-900',
+                          )}
                           style={{ width: `${percent}%` }}
                         />
                       </div>

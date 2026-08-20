@@ -15,13 +15,27 @@ import {
   type CombinedShortlistItem,
 } from '@/lib/actions/combinedShortlist.action'
 import { cn } from '@/lib/utils'
-import { CircleCheck, Eye, Info, Lock, Medal, Star, Trophy } from 'lucide-react'
+import {
+  AlertTriangle,
+  ChevronDown,
+  CircleCheck,
+  Eye,
+  Info,
+  Lock,
+  Medal,
+  Star,
+  Trash2,
+  Trophy,
+  X,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useMemo, useState, useTransition } from 'react'
 
 type SlotKey = 'first' | 'second' | 'third'
 
 type PickerTarget = SlotKey | 'highlyCommended'
+
+type HcReplaceState = { artworkId: string; selectedReplaceId: string | null }
 
 const slotConfig: { key: SlotKey; label: string }[] = [
   { key: 'first', label: 'First Prize' },
@@ -40,16 +54,37 @@ const assignOptionsByKey = new Map(assignOptions.map((option) => [option.key, op
 
 const HIGHLY_COMMENDED_CAP = 2
 
+function initialWinners(groups: CombinedShortlistGroup[]): Record<SlotKey, string | null> {
+  const flat = groups.flatMap((group) => group.items)
+  return {
+    first: flat.find((item) => item.award === 'first')?.artworkId ?? null,
+    second: flat.find((item) => item.award === 'second')?.artworkId ?? null,
+    third: flat.find((item) => item.award === 'third')?.artworkId ?? null,
+  }
+}
+
+function initialHighlyCommended(groups: CombinedShortlistGroup[]): string[] {
+  return groups
+    .flatMap((group) => group.items)
+    .filter((item) => item.award === 'highly_commended')
+    .map((item) => item.artworkId)
+}
+
+function initialConfirmed(groups: CombinedShortlistGroup[]): boolean {
+  return groups.flatMap((group) => group.items).some((item) => item.award !== null)
+}
+
 export default function CombinedShortlistView({ groups }: { groups: CombinedShortlistGroup[] }) {
   const [activeGroup, setActiveGroup] = useState(0)
-  const [winners, setWinners] = useState<Record<SlotKey, string | null>>({
-    first: null,
-    second: null,
-    third: null,
-  })
-  const [highlyCommended, setHighlyCommended] = useState<string[]>([])
+  const [winners, setWinners] = useState<Record<SlotKey, string | null>>(() =>
+    initialWinners(groups),
+  )
+  const [highlyCommended, setHighlyCommended] = useState<string[]>(() =>
+    initialHighlyCommended(groups),
+  )
+  const [confirmed, setConfirmed] = useState(() => initialConfirmed(groups))
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [confirmed, setConfirmed] = useState(false)
+  const [hcReplace, setHcReplace] = useState<HcReplaceState | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -61,6 +96,14 @@ export default function CombinedShortlistView({ groups }: { groups: CombinedShor
 
   const assignAward = (artworkId: string, target: PickerTarget) => {
     setError(null)
+
+    if (target === 'highlyCommended') {
+      const isAlreadyIn = highlyCommended.includes(artworkId)
+      if (!isAlreadyIn && highlyCommended.length >= HIGHLY_COMMENDED_CAP) {
+        setHcReplace({ artworkId, selectedReplaceId: null })
+        return
+      }
+    }
 
     // Reassigning: clear this work out of any prize slot it currently holds.
     setWinners((prev) => {
@@ -78,12 +121,32 @@ export default function CombinedShortlistView({ groups }: { groups: CombinedShor
 
       if (target !== 'highlyCommended') return withoutItem
       if (isAlreadyIn) return prev
-      if (withoutItem.length >= HIGHLY_COMMENDED_CAP) {
-        setError(`You can only select up to ${HIGHLY_COMMENDED_CAP} Highly Commended works`)
-        return prev
-      }
       return [...withoutItem, artworkId]
     })
+  }
+
+  const clearSlot = (key: SlotKey) => {
+    setWinners((prev) => ({ ...prev, [key]: null }))
+  }
+
+  const removeHighlyCommended = (artworkId: string) => {
+    setHighlyCommended((prev) => prev.filter((id) => id !== artworkId))
+  }
+
+  const confirmHcReplace = () => {
+    if (!hcReplace?.selectedReplaceId) return
+    const { artworkId, selectedReplaceId } = hcReplace
+
+    setWinners((prev) => {
+      const next = { ...prev }
+      ;(Object.keys(next) as SlotKey[]).forEach((key) => {
+        if (next[key] === artworkId) next[key] = null
+      })
+      return next
+    })
+
+    setHighlyCommended((prev) => prev.map((id) => (id === selectedReplaceId ? artworkId : id)))
+    setHcReplace(null)
   }
 
   const awardFor = (artworkId: string): PickerTarget | null => {
@@ -116,6 +179,10 @@ export default function CombinedShortlistView({ groups }: { groups: CombinedShor
         setError(result.error?.message ?? "Couldn't save winners, please try again")
       }
     })
+  }
+
+  const handleRevoke = () => {
+    setConfirmed(false)
   }
 
   const group = groups[activeGroup]
@@ -185,11 +252,20 @@ export default function CombinedShortlistView({ groups }: { groups: CombinedShor
                     {assignOptionsByKey.get(awardFor(item.artworkId)!)?.label}
                   </span>
                 )}
-                <AssignDropdown
-                  artworkId={item.artworkId}
-                  currentAward={awardFor(item.artworkId)}
-                  onAssign={(target) => assignAward(item.artworkId, target)}
-                />
+                <a
+                  href={`/admin/submissions/${item.artworkId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                >
+                  <Eye className="size-4" /> View details
+                </a>
+                {!confirmed && (
+                  <AssignMenuButton
+                    currentAward={awardFor(item.artworkId)}
+                    onAssign={(target) => assignAward(item.artworkId, target)}
+                  />
+                )}
               </div>
             </li>
           ))}
@@ -210,59 +286,84 @@ export default function CombinedShortlistView({ groups }: { groups: CombinedShor
           <h2 className="text-lg font-bold text-zinc-900">Winners</h2>
         </div>
         <p className="mb-6 text-sm text-zinc-500">
-          Assign winners from the list using each work&apos;s View details menu.
+          Assign winners from the list using each work&apos;s assign menu.
         </p>
 
-        {confirmed ? (
-          <div className="flex items-start gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
+        {confirmed && (
+          <div className="mb-5 flex items-start gap-2 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700">
             <CircleCheck className="mt-0.5 size-4 shrink-0" />
             <p>Winners confirmed and saved.</p>
           </div>
+        )}
+
+        <div className="flex flex-col gap-5">
+          {slotConfig.map((slot) => (
+            <WinnerSlot
+              key={slot.key}
+              label={slot.label}
+              item={winners[slot.key] ? (itemsById.get(winners[slot.key]!) ?? null) : null}
+              showRemove={!confirmed}
+              onRemove={() => clearSlot(slot.key)}
+            />
+          ))}
+
+          <div>
+            <p className="text-sm font-semibold text-zinc-900">
+              Highly Commended (up to {HIGHLY_COMMENDED_CAP})
+            </p>
+            <p className="mb-2 text-xs text-zinc-500">{highlyCommended.length} selected</p>
+            <div className="flex flex-col gap-2">
+              {highlyCommended.length === 0 && (
+                <p className="rounded-lg border border-dashed border-zinc-300 p-3 text-center text-sm text-zinc-400">
+                  No works selected yet
+                </p>
+              )}
+              {highlyCommended.map((id, idx) => {
+                const item = itemsById.get(id)
+                if (!item) return null
+                return (
+                  <div
+                    key={id}
+                    className="flex items-center gap-2 rounded-lg border border-zinc-200 p-2"
+                  >
+                    <span className="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-500">
+                      HC{idx + 1}
+                    </span>
+                    <img
+                      src={item.artworkImage}
+                      alt={item.title}
+                      className="size-9 shrink-0 rounded object-cover bg-zinc-100"
+                    />
+                    <p className="min-w-0 flex-1 truncate text-sm text-zinc-900">{item.title}</p>
+                    {!confirmed && (
+                      <button
+                        type="button"
+                        onClick={() => removeHighlyCommended(id)}
+                        aria-label={`Remove ${item.title} from Highly Commended`}
+                        className="shrink-0 cursor-pointer rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+
+        {confirmed ? (
+          <button
+            type="button"
+            onClick={handleRevoke}
+            className="mt-6 w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            Revoke winners
+          </button>
         ) : (
           <>
-            <div className="flex flex-col gap-5">
-              {slotConfig.map((slot) => (
-                <WinnerSlot
-                  key={slot.key}
-                  label={slot.label}
-                  item={winners[slot.key] ? (itemsById.get(winners[slot.key]!) ?? null) : null}
-                />
-              ))}
-
-              <div>
-                <p className="text-sm font-semibold text-zinc-900">
-                  Highly Commended (up to {HIGHLY_COMMENDED_CAP})
-                </p>
-                <p className="mb-2 text-xs text-zinc-500">{highlyCommended.length} selected</p>
-                <div className="flex flex-col gap-2">
-                  {highlyCommended.length === 0 && (
-                    <p className="rounded-lg border border-dashed border-zinc-300 p-3 text-center text-sm text-zinc-400">
-                      No works selected yet
-                    </p>
-                  )}
-                  {highlyCommended.map((id) => {
-                    const item = itemsById.get(id)
-                    if (!item) return null
-                    return (
-                      <div
-                        key={id}
-                        className="flex items-center gap-2 rounded-lg border border-zinc-200 p-2"
-                      >
-                        <img
-                          src={item.artworkImage}
-                          alt={item.title}
-                          className="size-9 shrink-0 rounded object-cover bg-zinc-100"
-                        />
-                        <p className="min-w-0 flex-1 truncate text-sm text-zinc-900">{item.title}</p>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-
             <button
               type="button"
               disabled={!canConfirm || isPending}
@@ -309,16 +410,111 @@ export default function CombinedShortlistView({ groups }: { groups: CombinedShor
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={Boolean(hcReplace)} onOpenChange={(open) => !open && setHcReplace(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="size-5 text-amber-500" />
+              Highly Commended limit reached
+            </DialogTitle>
+            <DialogDescription>
+              You can select up to {HIGHLY_COMMENDED_CAP} works for Highly Commended. To add this
+              work as Highly Commended, please choose which existing selection you want to replace.
+            </DialogDescription>
+          </DialogHeader>
+
+          {hcReplace &&
+            (() => {
+              const newItem = itemsById.get(hcReplace.artworkId)
+              if (!newItem) return null
+
+              return (
+                <div className="flex flex-col gap-4 pt-2">
+                  <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                    <img
+                      src={newItem.artworkImage}
+                      alt={newItem.title}
+                      className="size-12 shrink-0 rounded object-cover bg-zinc-100"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-blue-700">New selection</p>
+                      <p className="truncate text-sm font-semibold text-zinc-900">{newItem.title}</p>
+                      <p className="truncate text-xs text-zinc-500">By {newItem.participantName}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm font-medium text-zinc-700">
+                      Replace one of the existing Highly Commended works
+                    </p>
+                    {highlyCommended.map((id, idx) => {
+                      const item = itemsById.get(id)
+                      if (!item) return null
+                      return (
+                        <label
+                          key={id}
+                          className={cn(
+                            'flex cursor-pointer items-center gap-3 rounded-lg border p-3',
+                            hcReplace.selectedReplaceId === id ? 'border-zinc-900' : 'border-zinc-200',
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            name="hc-replace"
+                            checked={hcReplace.selectedReplaceId === id}
+                            onChange={() =>
+                              setHcReplace((prev) => (prev ? { ...prev, selectedReplaceId: id } : prev))
+                            }
+                            className="size-4"
+                          />
+                          <span className="shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-500">
+                            HC{idx + 1}
+                          </span>
+                          <img
+                            src={item.artworkImage}
+                            alt={item.title}
+                            className="size-10 shrink-0 rounded object-cover bg-zinc-100"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-zinc-900">{item.title}</p>
+                            <p className="truncate text-xs text-zinc-500">By {item.participantName}</p>
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
+
+          <DialogFooter className="pt-4">
+            <button
+              type="button"
+              onClick={() => setHcReplace(null)}
+              className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmHcReplace}
+              disabled={!hcReplace?.selectedReplaceId}
+              className="cursor-pointer rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Replace and confirm
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
 
-function AssignDropdown({
-  artworkId,
+function AssignMenuButton({
   currentAward,
   onAssign,
 }: {
-  artworkId: string
   currentAward: PickerTarget | null
   onAssign: (target: PickerTarget) => void
 }) {
@@ -326,20 +522,13 @@ function AssignDropdown({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50">
-        <Eye className="size-4" /> View details
+      <PopoverTrigger
+        aria-label="Assign as..."
+        className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-zinc-200 p-2.5 text-zinc-700 hover:bg-zinc-50"
+      >
+        <ChevronDown className="size-4" />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-52 gap-1">
-        <a
-          href={`/admin/submissions/${artworkId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => setOpen(false)}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-zinc-700 hover:bg-zinc-100"
-        >
-          <Eye className="size-4" /> View full details
-        </a>
-        <div className="my-1 border-t border-zinc-100" />
         <p className="px-2 pb-1 text-xs font-semibold text-zinc-400">Assign as...</p>
         {assignOptions.map((option) => (
           <button
@@ -366,9 +555,13 @@ function AssignDropdown({
 function WinnerSlot({
   label,
   item,
+  showRemove,
+  onRemove,
 }: {
   label: string
   item: CombinedShortlistItem | null
+  showRemove: boolean
+  onRemove: () => void
 }) {
   return (
     <div>
@@ -384,6 +577,16 @@ function WinnerSlot({
             <p className="truncate text-sm font-medium text-zinc-900">{item.title}</p>
             <p className="truncate text-xs text-zinc-500">By {item.participantName}</p>
           </div>
+          {showRemove && (
+            <button
+              type="button"
+              onClick={onRemove}
+              aria-label={`Remove ${label}`}
+              className="shrink-0 cursor-pointer rounded p-1 text-zinc-400 hover:bg-zinc-100 hover:text-red-600"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          )}
         </div>
       ) : (
         <div className="mt-2 flex items-center gap-2 rounded-lg border border-dashed border-zinc-300 p-3 text-sm text-zinc-400">

@@ -1,8 +1,8 @@
 'use client'
 
-import { CompetitionDateItem, updateCompetitionDate } from '@/lib/actions/competitionDate.action'
-import { Clock, PencilLine, PenOff, Target } from 'lucide-react'
-import { useState, useTransition } from 'react'
+import { CompetitionDateItem } from '@/lib/actions/competitionDate.action'
+import { Clock, PencilLine, Target } from 'lucide-react'
+import Link from 'next/link'
 
 type CompetitionTimelineProps = {
   dates: CompetitionDateItem[]
@@ -23,126 +23,7 @@ function formatDate(value: string | Date): string {
   return dateFormatter.format(new Date(value))
 }
 
-function toInputValue(value: string | Date): string {
-  return new Date(value).toISOString().slice(0, 10)
-}
-
 const valueTextClass = 'text-right text-sm text-zinc-900 whitespace-nowrap shrink-0'
-
-const valueButtonClass = `${valueTextClass} hover:underline decoration-dotted underline-offset-4`
-
-const editInputClass =
-  'text-right text-sm border border-zinc-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-zinc-400 disabled:opacity-50'
-
-type EditableDateProps = {
-  id: string
-  value: string | Date
-  editable: boolean
-  onSaved: (id: string, date: string) => void
-}
-
-function EditableDate({ id, value, editable, onSaved }: EditableDateProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
-
-  const handleChange = (raw: string) => {
-    if (!raw) return
-
-    const nextDate = new Date(raw)
-
-    startTransition(async () => {
-      const result = await updateCompetitionDate({ id, date: nextDate })
-
-      if (result.success && result.data) {
-        setError(null)
-        setIsEditing(false)
-        onSaved(id, result.data.date as unknown as string)
-      } else {
-        setError(result.error?.message ?? "Couldn't save, please try again")
-      }
-    })
-  }
-
-  if (editable && isEditing) {
-    return (
-      <span className="flex flex-col items-end gap-1">
-        <input
-          type="date"
-          autoFocus
-          disabled={isPending}
-          defaultValue={toInputValue(value)}
-          onChange={(e) => handleChange(e.target.value)}
-          onBlur={() => setIsEditing(false)}
-          className={editInputClass}
-        />
-        {error && <span className="text-xs text-red-600">{error}</span>}
-      </span>
-    )
-  }
-
-  if (!editable) {
-    return <span className={valueTextClass}>{formatDate(value)}</span>
-  }
-
-  return (
-    <button type="button" onClick={() => setIsEditing(true)} className={valueButtonClass}>
-      {formatDate(value)}
-    </button>
-  )
-}
-
-type EditableDateRangeProps = {
-  startId: string
-  endId: string
-  startValue: string | Date
-  endValue: string | Date
-  editable: boolean
-  onSaved: (id: string, date: string) => void
-}
-
-function EditableDateRange({
-  startId,
-  endId,
-  startValue,
-  endValue,
-  editable,
-  onSaved,
-}: EditableDateRangeProps) {
-  const [isEditing, setIsEditing] = useState(false)
-
-  if (editable && isEditing) {
-    return (
-      <span className="flex flex-col items-end gap-1">
-        <EditableDate id={startId} value={startValue} editable onSaved={onSaved} />
-        <EditableDate id={endId} value={endValue} editable onSaved={onSaved} />
-        <button
-          type="button"
-          onClick={() => setIsEditing(false)}
-          className="text-xs text-zinc-400 hover:text-zinc-600"
-        >
-          Done
-        </button>
-      </span>
-    )
-  }
-
-  const start = new Date(startValue)
-  const end = new Date(endValue)
-  const startLabel =
-    start.getFullYear() === end.getFullYear() ? monthDayFormatter.format(start) : formatDate(start)
-  const rangeText = `${startLabel} - ${formatDate(end)}`
-
-  if (!editable) {
-    return <span className={valueTextClass}>{rangeText}</span>
-  }
-
-  return (
-    <button type="button" onClick={() => setIsEditing(true)} className={valueButtonClass}>
-      {rangeText}
-    </button>
-  )
-}
 
 type TimelineRowProps = {
   icon: React.ReactNode
@@ -177,15 +58,6 @@ function TimelineRow({ icon, label, children, stacked }: TimelineRowProps) {
 }
 
 export default function CompetitionTimeline({ dates }: CompetitionTimelineProps) {
-  const [values, setValues] = useState(
-    () => new Map(dates.map((item) => [item._id, item.date as string | Date])),
-  )
-  const [isEditMode, setIsEditMode] = useState(false)
-
-  const handleSaved = (id: string, date: string) => {
-    setValues((prev) => new Map(prev).set(id, date))
-  }
-
   const byName = (name: string) => dates.find((item) => item.name === name)
 
   const entriesOpen = byName('Entries open')
@@ -199,57 +71,43 @@ export default function CompetitionTimeline({ dates }: CompetitionTimelineProps)
       <div className="flex flex-col gap-4 px-6 py-4">
         <div className="flex w-full items-center justify-between">
           <h3 className="text-md font-bold text-zinc-900">Competition timeline</h3>
-          <button
-            type="button"
-            onClick={() => setIsEditMode((prev) => !prev)}
-            aria-pressed={isEditMode}
-            aria-label={isEditMode ? 'Stop editing dates' : 'Edit dates'}
-            className={`rounded p-1 transition-colors text-zinc-900`}
+          <Link
+            href="/admin/settings"
+            aria-label="Edit dates in Settings"
+            className="rounded p-1 transition-colors text-zinc-900"
           >
-            {isEditMode ? <PenOff size={16} className='cursor-pointer' /> : <PencilLine size={16} className='cursor-pointer' />}
-          </button>
+            <PencilLine size={16} className="cursor-pointer" />
+          </Link>
         </div>
         <ul className="flex flex-col">
           {entriesOpen && (
             <TimelineRow icon={<Clock size={12} />} label="Entries open">
-              <EditableDate
-                id={entriesOpen._id}
-                value={values.get(entriesOpen._id) ?? entriesOpen.date}
-                editable={isEditMode}
-                onSaved={handleSaved}
-              />
+              <span className={valueTextClass}>{formatDate(entriesOpen.date)}</span>
             </TimelineRow>
           )}
           {entriesClose && (
             <TimelineRow icon={<Clock size={12} />} label="Entries close">
-              <EditableDate
-                id={entriesClose._id}
-                value={values.get(entriesClose._id) ?? entriesClose.date}
-                editable={isEditMode}
-                onSaved={handleSaved}
-              />
+              <span className={valueTextClass}>{formatDate(entriesClose.date)}</span>
             </TimelineRow>
           )}
           {votingStart && votingEnd && (
             <TimelineRow icon={<Target size={12} />} label="People's Choice voting" stacked>
-              <EditableDateRange
-                startId={votingStart._id}
-                endId={votingEnd._id}
-                startValue={values.get(votingStart._id) ?? votingStart.date}
-                endValue={values.get(votingEnd._id) ?? votingEnd.date}
-                editable={isEditMode}
-                onSaved={handleSaved}
-              />
+              <span className={valueTextClass}>
+                {(() => {
+                  const start = new Date(votingStart.date)
+                  const end = new Date(votingEnd.date)
+                  const startLabel =
+                    start.getFullYear() === end.getFullYear()
+                      ? monthDayFormatter.format(start)
+                      : formatDate(start)
+                  return `${startLabel} - ${formatDate(end)}`
+                })()}
+              </span>
             </TimelineRow>
           )}
           {winnersAnnounced && (
             <TimelineRow icon={<Clock size={12} />} label="Winners announced">
-              <EditableDate
-                id={winnersAnnounced._id}
-                value={values.get(winnersAnnounced._id) ?? winnersAnnounced.date}
-                editable={isEditMode}
-                onSaved={handleSaved}
-              />
+              <span className={valueTextClass}>{formatDate(winnersAnnounced.date)}</span>
             </TimelineRow>
           )}
         </ul>

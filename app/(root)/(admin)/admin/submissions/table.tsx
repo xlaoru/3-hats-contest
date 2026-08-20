@@ -240,19 +240,6 @@ export default function Table({
   const currentQuery = searchParams.get('query') ?? ''
 
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-
-  const allSelected =
-    artworks.length > 0 && artworks.every((item) => selectedIds.includes(item._id))
-  const someSelected = selectedIds.length > 0 && !allSelected
-
-  const toggleAll = () => {
-    setSelectedIds(allSelected ? [] : artworks.map((item) => item._id))
-  }
-
-  const toggleOne = (id: string) => {
-    setSelectedIds((prev) => toggleValue(prev, id))
-  }
 
   function buildUrl(updates: Record<string, string | string[] | undefined>) {
     const params = new URLSearchParams(searchParams.toString())
@@ -384,18 +371,7 @@ export default function Table({
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-y border-zinc-200 text-zinc-500">
-              <th className="w-10 px-6 py-3">
-                <input
-                  type="checkbox"
-                  className="size-4 rounded border-zinc-300"
-                  checked={allSelected}
-                  ref={(el) => {
-                    if (el) el.indeterminate = someSelected
-                  }}
-                  onChange={toggleAll}
-                />
-              </th>
-              <th className="px-3 py-3 font-medium">Artist</th>
+              <th className="px-6 py-3 font-medium">Artist</th>
               <th className="px-3 py-3 font-medium">Artwork title</th>
               <th className="px-3 py-3 font-medium">Status</th>
               <th className="px-3 py-3 font-medium">
@@ -414,15 +390,7 @@ export default function Table({
                 key={item._id}
                 className="cursor-pointer border-b border-zinc-100 last:border-0 bg-white transition-colors hover:bg-zinc-200"
               >
-                <td className="px-6 py-4 align-top" onClick={(event) => event.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    className="size-4 rounded border-zinc-300"
-                    checked={selectedIds.includes(item._id)}
-                    onChange={() => toggleOne(item._id)}
-                  />
-                </td>
-                <td className="px-3 py-4 align-top">
+                <td className="px-6 py-4 align-top">
                   <div className="font-medium text-zinc-900">{item.participant.name}</div>
                   <div className="text-xs text-zinc-500">{item.participant.state}</div>
                 </td>
