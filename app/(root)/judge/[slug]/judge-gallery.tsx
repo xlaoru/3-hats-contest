@@ -358,14 +358,15 @@ export default function JudgeGallery({
                   </>
                 )}
               </div>
-              <div className="mt-2 flex w-1/2 shrink-0 items-end justify-between gap-4 self-center rounded-xl bg-white px-5 py-4 shadow-lg">
+              <div className="mt-2 flex w-1/2 shrink-0 items-center justify-between gap-4 self-center rounded-xl bg-white px-5 py-4 shadow-lg">
                 <div className="min-w-0">
                   <h2 className="truncate text-lg font-semibold text-zinc-900">
                     {previewArtwork.title}
                   </h2>
                   <p className="truncate text-sm text-zinc-500">
-                    {previewArtwork.medium} · {previewArtwork.artworkSize}
+                    {previewArtwork.participant.name} · {previewArtwork.participant.state}
                   </p>
+                  <p className="truncate text-sm text-zinc-500">{previewArtwork.medium}</p>
                 </div>
                 <div className="shrink-0">{renderVoteButton(previewArtwork)}</div>
               </div>
