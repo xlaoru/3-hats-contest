@@ -317,15 +317,15 @@ export default function JudgeGallery({
       <Dialog open={!!previewArtwork} onOpenChange={(open) => !open && closePreview()}>
         <DialogContent
           showClose={false}
-          className="inset-6 flex h-auto w-auto max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-4 rounded-xl"
+          className="inset-6 flex h-auto w-auto max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-4 rounded-xl border-none bg-transparent p-0 shadow-none"
         >
           {previewArtwork && previewIndex !== null && (
             <div className="flex h-full min-h-0 flex-col gap-4">
-              <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-zinc-100">
+              <div className="relative min-h-0 flex-1 overflow-hidden">
                 <img
                   src={previewArtwork.artworkImage}
                   alt={previewArtwork.title}
-                  className="max-h-full max-w-full object-contain"
+                  className="h-full w-full object-contain"
                 />
                 <button
                   type="button"
@@ -358,7 +358,7 @@ export default function JudgeGallery({
                   </>
                 )}
               </div>
-              <div className="mt-2 flex shrink-0 items-end justify-between gap-4">
+              <div className="mt-2 flex shrink-0 items-end justify-between gap-4 rounded-xl bg-white px-5 py-4 shadow-lg">
                 <div className="min-w-0">
                   <h2 className="truncate text-lg font-semibold text-zinc-900">
                     {previewArtwork.title}
