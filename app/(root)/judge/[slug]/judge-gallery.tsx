@@ -358,7 +358,7 @@ export default function JudgeGallery({
                   </>
                 )}
               </div>
-              <div className="mt-2 flex w-1/2 shrink-0 items-center justify-between gap-4 self-center rounded-xl bg-white px-5 py-4 shadow-lg">
+              <div className="mt-2 flex w-1/2 max-[500px]:w-full shrink-0 items-center justify-between gap-4 self-center rounded-xl bg-white px-5 py-4 shadow-lg">
                 <div className="min-w-0">
                   <h2 className="truncate text-lg font-semibold text-zinc-900">
                     {previewArtwork.title}
